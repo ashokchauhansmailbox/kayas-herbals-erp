@@ -5,6 +5,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## Sprint 1.3 — Auth + RBAC + Audit + Seeds + Route Foundations — 2026-02-06
+
+### Added
+- **Security core**: `app/core/security.py` — HS256 JWT verification against `SUPABASE_JWT_SECRET` (validates signature, aud, exp, sub). Also exposes `mint_token()` for pytest.
+- **Dependencies**: `app/deps.py` — `get_db`, `get_token_claims`, `get_current_user`, `require("perm.code")`, `request_id`.
+- **Auth service**: `app/services/auth_service.py` — resolves the local user, auto-provisions on first login, honours suspension/deletion, records `sessions.jti` and honours `revoked_at`.
+- **Audit framework**: `app/services/audit_service.py` — `AuditContext(before/after → deepdiff)` writes to `audit_logs` in the same tx as the mutation; `log_activity()` for the read-side event stream.
+- **Seed data**:
+  - 89-entry permission catalogue (`app/seeds/permissions.py`).
+  - 9 system roles + full role→permission mapping (`app/seeds/roles.py`).
+  - Master data: 8 units, 5 GST rates, 12 HSN codes (herbal/ayurvedic), 6 categories, 1 brand (Kaya's Herbals), 1 warehouse (KH-BLR-MAIN), 5 payment terms, 4 tax rules, 5 courier partners.
+  - Idempotent runner `python -m app.seeds.run` — re-runs are safe and re-sync system-role permission mapping.
+- **Pydantic schemas**: `app/schemas/common.py`, `auth.py`, `admin.py`.
+- **API routes** (18 endpoints under `/api/v1`):
+  - `/auth/me`, `/auth/sessions`, `/auth/logout`
+  - `/users` list/get/patch/assign-role/revoke-role
+  - `/roles` list/get/create/update/delete (system-role protection)
+  - `/permissions` list + filter by module
+  - `/invitations` list/create/revoke
+  - `/audit/logs`, `/audit/activity` paginated
+- **Postman collection baseline** (`docs/api/postman_collection.json`) — 23 requests, 7 folders, generated deterministically from the OpenAPI spec via `scripts/generate_postman.py`.
+- **Contract drift check** upgraded to cover openapi.json + openapi.yaml + postman_collection.json.
+- **Tests** — 30 new cases (11 auth, 9 RBAC, 10 audit + OWASP incl. `alg=none` rejection, IDOR, SQL-injection input safety, missing-bearer / missing-permission / no-internals-leak).
+- CI: new `seed-idempotency` and `docker-compose-boot` gates; contract check now enforces all three baseline files.
+
+### Changed
+- `pytest.ini` — pinned `asyncio_default_fixture_loop_scope = session` and `asyncio_default_test_loop_scope = session` (requires pytest-asyncio ≥ 1.4).
+- `requirements.txt` — pytest 8.4, pytest-asyncio 1.4, httpx pinned.
+- `docker-compose.yml` — backend now runs `alembic upgrade head && python -m app.seeds.run` before uvicorn.
+
+### Roadmap adjustment
+Sprint 1.3 was originally planned as "Purchase + Distributor + Customer" but was swapped forward with the Auth/RBAC track so subsequent sprints have real identity from day one. Purchase/Distributor/Customer moved to Sprint 1.4.
+
 ## Sprint 1.2 — Catalog + Inventory — 2026-02-06
 
 ### Added

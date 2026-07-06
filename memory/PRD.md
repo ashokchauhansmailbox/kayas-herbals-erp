@@ -76,12 +76,27 @@ Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`.
 ## Backlog
 
 ### P0 — next up
-- **Sprint 1.3 — Purchase + Distributor + Customer**: `purchase.py` (vendors, purchase_orders, po_items, grn, grn_items, vendor_invoices) + `distributor.py` (tiers, price lists, distributors, kyc_documents, customer_ledger) + `customer.py` (profiles, addresses, wallets, referrals). Migrations `006`, `007` + data migration to install `purchase_price_history.vendor_id/po_id` FKs.
+- **Sprint 1.4 — Purchase + Distributor + Customer**: `purchase.py` (vendors, purchase_orders, po_items, grn, grn_items, vendor_invoices) + `distributor.py` (tiers, price lists, distributors, kyc_documents, customer_ledger) + `customer.py` (profiles, addresses, wallets, referrals). Migrations `006`, `007` + data migration to install `purchase_price_history.vendor_id/po_id` FKs.
 
 ### P1
-- Sprint 1.4 — Orders + Billing + Payments · migrations `008`, `009`.
-- Sprint 1.5 — Marketing + Support + Settings + indexes/views/triggers · migrations `010`, `011`, `012`.
-- Sprint 1.6 — Supabase JWT verifier + capability RBAC middleware + seeds (permissions/roles/master data) + Pydantic schemas + route stubs.
+- Sprint 1.5 — Orders + Billing + Payments · migrations `008`, `009`.
+- Sprint 1.6 — Marketing + Support + Settings + indexes/views/triggers (append-only journal triggers, hard-delete guard on financial docs) · migrations `010`, `011`, `012`.
+
+### P2
+- Sprint 1.7 — Ops runbooks (Backup, DR, Migration, Rollback, Restore, Version-Upgrade) + final OpenAPI + Postman snapshot + release readiness review.
+
+### Sprint 1.3 (2026-02-06) — Auth + RBAC + Audit + Seeds + Route Foundations ✅ Ready for review
+
+- **Security core** (`app/core/security.py`): HS256 JWT verify against SUPABASE_JWT_SECRET, `mint_token()` for tests.
+- **Dependencies** (`app/deps.py`): `get_db`, `get_token_claims`, `get_current_user`, `require("perm.code")`, `request_id`.
+- **AuthService** — resolves local user, auto-provisions from Supabase JWT, honours suspension/deletion, tracks `sessions.jti` + `revoked_at`.
+- **AuditContext** — before/after JSONB + deepdiff, same tx as mutation. `log_activity()` for read events.
+- **Seeds**: 89 permissions, 9 system roles, full role→permission mapping, 8 units, 5 GST rates, 12 HSN codes, 6 categories, 1 brand, 1 warehouse, 5 payment terms, 4 tax rules, 5 courier partners. Fully idempotent.
+- **Schemas**: `common.py`, `auth.py`, `admin.py` (ORMModel, Page[T], MeOut, RoleOut, InvitationOut, AuditLogOut, ...).
+- **Routes** (18 v1 endpoints): `/auth/me|sessions|logout`, `/users`, `/roles`, `/permissions`, `/invitations`, `/audit/logs|activity`.
+- **Postman baseline** at `docs/api/postman_collection.json` (23 requests, 7 folders) — CI drift-checked alongside OpenAPI.
+- **CI extended**: seed idempotency (×2) + Docker Compose smoke boot job.
+- Tests: 30 new (11 auth + 9 RBAC + 10 audit/OWASP) — grand total **109 pytest cases green**.
 
 ### P2
 - Sprint 1.7 — Ops runbooks (Backup, DR, Migration, Rollback, Restore, Version-Upgrade) + OpenAPI snapshot committed to `/docs/api/openapi.json`.

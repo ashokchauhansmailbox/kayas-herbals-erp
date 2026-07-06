@@ -103,20 +103,143 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Continue Sprint 1.1 → 1.2 — Kaya BOS (Business Operating System).
+  Continue Kaya BOS: Sprint 1.3 = Auth + RBAC + Audit + Seeds + Pydantic schemas + route foundations.
   Repository: https://github.com/ashokchauhansmailbox/kayas-herbals-erp
+  Roadmap adjustment: Auth/RBAC moved forward from Sprint 1.6 to 1.3; Purchase/Distributor/Customer moved to 1.4.
+  Additional requirements: OpenAPI + Postman generation, authentication integration tests, authorization tests
+  for every permission, audit logging tests, OWASP security tests, 100% migration reversibility, updated docs.
 
-  Sprint 1.1 (Database Foundation) — SQLAlchemy Base + async session + mixins
-  + type helpers + identity/master-data models + Alembic 001–003 + tests.
+backend:
+  - task: "Security core (JWT verify + mint) + FastAPI dependencies"
+    implemented: true
+    working: true
+    file: "backend/app/core/security.py, backend/app/deps.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "HS256 JWT verify with signature/aud/exp/sub validation. mint_token() for tests (no live Supabase needed). Dependencies: get_db, get_token_claims, get_current_user, require('perm.code'), request_id."
 
-  Pre-Sprint-1.2 tooling — OpenAPI baseline (JSON+YAML), CI (ruff/mypy/pytest/
-  alembic cycle/openapi drift), .env.example, mypy.ini, docker-compose init
-  script, reproducibility verification against a fresh Postgres.
+  - task: "AuthService — user resolution + session tracking"
+    implemented: true
+    working: true
+    file: "backend/app/services/auth_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "Loads local user (auto-provisions from Supabase JWT on first login), honours suspension/deletion, records sessions.jti on first request, honours revoked_at (BR-USR-04)."
 
-  Sprint 1.2 (Catalog + Inventory) — catalog.py (products, variants, images,
-  documents, certifications, price journals) + inventory.py (batches, ledger,
-  snapshots, transfers, adjustments, alerts) + v_stock_valuation view +
-  migrations 004, 005 + per-migration docs + unit/integration/smoke tests.
+  - task: "AuditContext + activity logging"
+    implemented: true
+    working: true
+    file: "backend/app/services/audit_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "AuditContext(before/after → deepdiff) inserts audit_logs row in same tx as mutation. log_activity() for read-side events."
+
+  - task: "Idempotent seeds (permissions + roles + master data)"
+    implemented: true
+    working: true
+    file: "backend/app/seeds/permissions.py, roles.py, master_data.py, run.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "89 permissions, 9 system roles with role→permission mapping, 8 units + 5 GST + 12 HSN + 6 categories + Kaya brand + KH-BLR-MAIN warehouse + 5 payment terms + 4 tax rules + 5 courier partners. Verified idempotent (2 consecutive runs return identical counts)."
+
+  - task: "Pydantic schemas + 18 v1 routes"
+    implemented: true
+    working: true
+    file: "backend/app/schemas/{common,auth,admin}.py, backend/app/api/v1/routes/{auth,users,admin,invitations,audit}.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "18 endpoints: /auth/me|sessions|logout, /users list/get/patch + assign/revoke role, /roles CRUD (system-role protected), /permissions list, /invitations, /audit/logs + /audit/activity paginated."
+
+  - task: "OpenAPI + Postman contract baselines + drift check"
+    implemented: true
+    working: true
+    file: "scripts/generate_openapi.py, scripts/generate_postman.py, scripts/check_openapi_drift.py, docs/api/openapi.{json,yaml}, docs/api/postman_collection.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "Postman v2.1.0 collection generated from OpenAPI, 23 requests across 7 folders. Drift check now covers all 3 artifacts. CI fails on any drift."
+
+  - task: "Test suite — 109 cases across schema + migrations + integration + auth + RBAC + audit + OWASP"
+    implemented: true
+    working: true
+    file: "backend/tests/test_auth.py, test_rbac.py, test_audit_security.py + preserved 1.1/1.2 tests"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "109/109 passed. Auth (11): bearer/malformed/expired/wrong-aud/tampered/wrong-secret/invalid-sub/suspended/revoked/alg=none. RBAC (9): permissions installed, role diff, role isolation, custom-role CRUD, system-role protection. Audit+OWASP (10): audit row + diff, activity log, pagination, SQLi input safety, IDOR, missing bearer, missing permission, no-internals leak, alg=none, seed idempotency."
+
+  - task: "Reproducibility — clean clone + fresh venv + fresh Postgres → migrations + seed + tests + health"
+    implemented: true
+    working: true
+    file: "docker-compose.yml, backend/.env.example, infra/postgres-init/01-create-test-db.sql, .github/workflows/ci.yml"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "Third fresh-clone repro run: fresh venv + fresh Postgres (kaya_bos_r3) → alembic up/down/up + check clean → seed x2 identical → pytest 109/109 → openapi drift clean → uvicorn boots → /api/v1/health/db reports rev=005 tables=34. Docker Compose command extended to run seed after migrations."
+
+frontend:
+  - task: "No frontend work in Sprints 1.1–1.3"
+    implemented: false
+    working: "NA"
+    file: "n/a"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Backend-only sprints. Frontend rework is scheduled for Sprint 2."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.3"
+  test_sequence: 3
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Auth (JWT verify + session tracking)"
+    - "RBAC (per-permission enforcement)"
+    - "AuditContext + activity log"
+    - "Seed idempotency"
+    - "OpenAPI + Postman contract drift"
+    - "OWASP-adjacent security scenarios"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    -agent: "main"
+    -message: "Sprint 1.3 (Auth + RBAC + Audit + Seeds + Route Foundations) complete. 109/109 pytest green. Alembic round-trip + drift-check clean. Contract drift check now covers openapi.json + openapi.yaml + postman_collection.json. Docker compose smoke-boot added to CI. Awaiting sprint review + approval before starting Sprint 1.4 (Purchase + Distributor + Customer)."
 
 backend:
   - task: "SQLAlchemy foundation (base, session, mixins, types)"

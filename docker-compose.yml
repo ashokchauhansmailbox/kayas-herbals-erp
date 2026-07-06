@@ -33,8 +33,8 @@ services:
       postgres: {condition: service_healthy}
       redis:    {condition: service_started}
     ports: ["8001:8001"]
-    # Sprint 1.1/1.2: migrations only. Sprint 1.6 will re-introduce the seed step.
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+    # Sprint 1.3: run migrations + idempotent seed before starting the API.
+    command: sh -c "alembic upgrade head && python -m app.seeds.run && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
 
 volumes:
   pgdata: {}

@@ -1,10 +1,5 @@
-"""OpenAPI drift detection.
-
-Compares the freshly-generated spec against the committed baseline under
-`docs/api/`. Exits non-zero when they differ so CI can fail the PR.
-
-Usage:
-    python scripts/check_openapi_drift.py
+"""Contract drift check — regenerates OpenAPI JSON/YAML and Postman collection
+and fails if any committed baseline changed. Used by CI.
 """
 from __future__ import annotations
 
@@ -14,37 +9,36 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 API_DIR = REPO_ROOT / "docs" / "api"
-FILES = ("openapi.json", "openapi.yaml")
+FILES = ("openapi.json", "openapi.yaml", "postman_collection.json")
 
 
 def _snapshot() -> dict[str, str]:
     return {f: (API_DIR / f).read_text() if (API_DIR / f).exists() else "" for f in FILES}
 
 
+def _run(*args: str) -> None:
+    r = subprocess.run([sys.executable, *args], capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.stderr.write(r.stderr)
+        raise SystemExit(r.returncode)
+
+
 def main() -> int:
     before = _snapshot()
-    result = subprocess.run(
-        [sys.executable, str(REPO_ROOT / "scripts" / "generate_openapi.py")],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        sys.stderr.write(result.stderr)
-        return result.returncode
-
+    _run(str(REPO_ROOT / "scripts" / "generate_openapi.py"))
+    _run(str(REPO_ROOT / "scripts" / "generate_postman.py"))
     after = _snapshot()
+
     drifted = [f for f in FILES if before[f] != after[f]]
     if drifted:
-        sys.stderr.write("\nOpenAPI drift detected in: " + ", ".join(drifted) + "\n")
+        sys.stderr.write("\nAPI contract drift detected in: " + ", ".join(drifted) + "\n")
         sys.stderr.write(
-            "The committed spec in docs/api/ does not match the code. "
-            "Re-run `python scripts/generate_openapi.py` locally and commit the result.\n"
+            "Re-run `python scripts/generate_openapi.py && python scripts/generate_postman.py` "
+            "locally and commit the resulting files.\n"
         )
-        # Show first diff for context.
         for f in drifted:
-            path = API_DIR / f
             diff = subprocess.run(
-                ["git", "--no-pager", "diff", "--no-color", str(path)],
+                ["git", "--no-pager", "diff", "--no-color", str(API_DIR / f)],
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
@@ -52,8 +46,7 @@ def main() -> int:
             if diff.stdout:
                 sys.stderr.write(f"\n--- diff {f} ---\n{diff.stdout}\n")
         return 1
-
-    print("OpenAPI spec matches baseline.")
+    print("API contracts match baseline (openapi.json, openapi.yaml, postman_collection.json).")
     return 0
 
 

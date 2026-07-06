@@ -1,11 +1,14 @@
+"""Sprint 1.3 API wiring."""
 from fastapi import APIRouter
 
-from .routes import health
+from .routes import audit, auth, health, invitations, users
+from .routes.admin import permissions_router, roles_router
 
 api_v1 = APIRouter()
 api_v1.include_router(health.router, tags=["health"])
-
-# Sprint 1.2+ will add:
-#   auth, users, roles, permissions, master_data, audit
-# Their route modules do not exist yet; wiring them here would break
-# app startup. Each route module MUST be added below when authored.
+api_v1.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_v1.include_router(users.router, prefix="/users", tags=["users"])
+api_v1.include_router(roles_router, prefix="/roles", tags=["roles"])
+api_v1.include_router(permissions_router, prefix="/permissions", tags=["permissions"])
+api_v1.include_router(invitations.router, prefix="/invitations", tags=["invitations"])
+api_v1.include_router(audit.router, prefix="/audit", tags=["audit"])
