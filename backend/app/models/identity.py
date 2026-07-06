@@ -16,28 +16,19 @@ Design principles (see docs/architecture/02-database-schema.md):
     * Roles + permissions are the RBAC substrate (docs/architecture/05-rbac.md).
     * Audit vs activity distinction lives in docs/architecture/06-audit-activity.md.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    ForeignKey,
-    Index,
-    String,
-    Text,
-    text,
-)
-from sqlalchemy.dialects.postgresql import INET
-from sqlalchemy.orm import Mapped, mapped_column
-
 from app.db.base import Base
 from app.db.mixins import SoftDeleteMixin, TimestampMixin, VersionMixin
 from app.db.types import PGUUID, jsonb_column, uuid_pk
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String, Text, text
+from sqlalchemy.dialects.postgresql import INET
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 # ---------------------------------------------------------------------------
@@ -128,10 +119,14 @@ class UserRole(Base):
     __tablename__ = "user_roles"
 
     user_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     role_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+        PGUUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     assigned_by: Mapped[Optional[UUID]] = mapped_column(
         PGUUID(as_uuid=True),
@@ -157,7 +152,9 @@ class Session(Base, TimestampMixin):
     jti: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     ip: Mapped[Optional[str]] = mapped_column(INET, nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
@@ -175,10 +172,14 @@ class UserInvitation(Base, TimestampMixin):
     id = uuid_pk()
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     role_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
+        PGUUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="RESTRICT"),
+        nullable=False,
     )
     token: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     invited_by: Mapped[Optional[UUID]] = mapped_column(
         PGUUID(as_uuid=True),
@@ -204,7 +205,9 @@ class AuditLog(Base):
     )
     actor_role: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     entity: Mapped[str] = mapped_column(String(64), nullable=False)
-    entity_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    entity_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
     action: Mapped[str] = mapped_column(String(32), nullable=False)
     before = jsonb_column(nullable=True)
     after = jsonb_column(nullable=True)
@@ -235,7 +238,9 @@ class ActivityLog(Base):
     )
     event: Mapped[str] = mapped_column(String(96), nullable=False)
     entity: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    entity_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    entity_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
     payload = jsonb_column(nullable=True)
     ip: Mapped[Optional[str]] = mapped_column(INET, nullable=True)
     at: Mapped[datetime] = mapped_column(

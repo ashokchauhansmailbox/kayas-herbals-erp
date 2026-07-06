@@ -1,25 +1,29 @@
 """Audit + activity log read routes."""
+
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
-
 from app.deps import DbSession, require
 from app.models.identity import ActivityLog, AuditLog
 from app.schemas.admin import ActivityLogOut, AuditLogOut
 from app.schemas.common import Page
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 
 router = APIRouter()
 
 
-@router.get("/logs", response_model=Page[AuditLogOut], dependencies=[Depends(require("audit.read"))])
+@router.get(
+    "/logs",
+    response_model=Page[AuditLogOut],
+    dependencies=[Depends(require("audit.read"))],
+)
 async def list_audit(
     db: DbSession,
-    page: int = 1,
-    page_size: int = 50,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
     entity: str | None = None,
     entity_id: uuid.UUID | None = None,
     actor_id: uuid.UUID | None = None,
@@ -37,12 +41,20 @@ async def list_audit(
         stmt = stmt.where(AuditLog.action == action)
     if since:
         stmt = stmt.where(AuditLog.at >= since)
-    total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
+    total = (
+        await db.execute(select(func.count()).select_from(stmt.subquery()))
+    ).scalar_one()
     rows = (
-        await db.execute(
-            stmt.order_by(AuditLog.at.desc()).offset((page - 1) * page_size).limit(page_size)
+        (
+            await db.execute(
+                stmt.order_by(AuditLog.at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return Page[AuditLogOut](
         items=[AuditLogOut.model_validate(r) for r in rows],
         page=page,
@@ -51,11 +63,15 @@ async def list_audit(
     )
 
 
-@router.get("/activity", response_model=Page[ActivityLogOut], dependencies=[Depends(require("audit.read"))])
+@router.get(
+    "/activity",
+    response_model=Page[ActivityLogOut],
+    dependencies=[Depends(require("audit.read"))],
+)
 async def list_activity(
     db: DbSession,
-    page: int = 1,
-    page_size: int = 50,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
     event: str | None = None,
     actor_id: uuid.UUID | None = None,
 ) -> Page[ActivityLogOut]:
@@ -64,12 +80,20 @@ async def list_activity(
         stmt = stmt.where(ActivityLog.event == event)
     if actor_id:
         stmt = stmt.where(ActivityLog.actor_id == actor_id)
-    total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
+    total = (
+        await db.execute(select(func.count()).select_from(stmt.subquery()))
+    ).scalar_one()
     rows = (
-        await db.execute(
-            stmt.order_by(ActivityLog.at.desc()).offset((page - 1) * page_size).limit(page_size)
+        (
+            await db.execute(
+                stmt.order_by(ActivityLog.at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return Page[ActivityLogOut](
         items=[ActivityLogOut.model_validate(r) for r in rows],
         page=page,

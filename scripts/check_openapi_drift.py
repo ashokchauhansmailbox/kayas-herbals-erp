@@ -1,6 +1,7 @@
 """Contract drift check — regenerates OpenAPI JSON/YAML and Postman collection
 and fails if any committed baseline changed. Used by CI.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -13,7 +14,9 @@ FILES = ("openapi.json", "openapi.yaml", "postman_collection.json")
 
 
 def _snapshot() -> dict[str, str]:
-    return {f: (API_DIR / f).read_text() if (API_DIR / f).exists() else "" for f in FILES}
+    return {
+        f: (API_DIR / f).read_text() if (API_DIR / f).exists() else "" for f in FILES
+    }
 
 
 def _run(*args: str) -> None:
@@ -31,7 +34,9 @@ def main() -> int:
 
     drifted = [f for f in FILES if before[f] != after[f]]
     if drifted:
-        sys.stderr.write("\nAPI contract drift detected in: " + ", ".join(drifted) + "\n")
+        sys.stderr.write(
+            "\nAPI contract drift detected in: " + ", ".join(drifted) + "\n"
+        )
         sys.stderr.write(
             "Re-run `python scripts/generate_openapi.py && python scripts/generate_postman.py` "
             "locally and commit the resulting files.\n"
@@ -46,7 +51,9 @@ def main() -> int:
             if diff.stdout:
                 sys.stderr.write(f"\n--- diff {f} ---\n{diff.stdout}\n")
         return 1
-    print("API contracts match baseline (openapi.json, openapi.yaml, postman_collection.json).")
+    print(
+        "API contracts match baseline (openapi.json, openapi.yaml, postman_collection.json)."
+    )
     return 0
 
 

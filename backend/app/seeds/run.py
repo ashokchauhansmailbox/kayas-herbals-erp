@@ -7,13 +7,11 @@ Seeds are additive: existing rows are not touched. Role→permission mapping
 is fully replaced on each run for system roles (so adding a new permission
 code takes effect without manual DB fiddling), but never for custom roles.
 """
+
 from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session_factory
 from app.models.identity import Permission, Role, RolePermission
@@ -25,7 +23,6 @@ from app.models.master_data import (
     HsnCode,
     PaymentTerm,
     TaxRule,
-    Transporter,
     Unit,
     Warehouse,
 )
@@ -42,6 +39,8 @@ from app.seeds.master_data import (
 )
 from app.seeds.permissions import PERMISSIONS
 from app.seeds.roles import ROLES
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def _seed_permissions(db: AsyncSession) -> dict[str, Permission]:
@@ -60,7 +59,9 @@ async def _seed_permissions(db: AsyncSession) -> dict[str, Permission]:
     return by_code
 
 
-async def _seed_roles(db: AsyncSession, perms: dict[str, Permission]) -> dict[str, Role]:
+async def _seed_roles(
+    db: AsyncSession, perms: dict[str, Permission]
+) -> dict[str, Role]:
     by_code: dict[str, Role] = {}
     existing = {r.code: r for r in (await db.execute(select(Role))).scalars()}
     for spec in ROLES:
@@ -87,8 +88,17 @@ async def _seed_roles(db: AsyncSession, perms: dict[str, Permission]) -> dict[st
         role = by_code[code]
         if not role.is_system:
             continue
-        await db.execute(delete(RolePermission).where(RolePermission.role_id == role.id))
-        for pcode in spec.get("permissions", []):  # type: ignore[arg-type]
+        await db.execute(
+            delete(RolePermission).where(RolePermission.role_id == role.id)
+        )
+        perms_list = spec.get("permissions") or []
+        if not isinstance(perms_list, list):
+            raise TypeError(f"role {code!r}: permissions must be a list")
+        for pcode in perms_list:
+            if not isinstance(pcode, str):
+                raise TypeError(
+                    f"Non-string permission code in role {code!r}: {pcode!r}"
+                )
             perm = perms.get(pcode)
             if perm is None:
                 raise ValueError(f"Unknown permission code in role {code!r}: {pcode!r}")
@@ -118,7 +128,9 @@ async def _seed_gst_rates(db: AsyncSession) -> dict[Decimal, GstRate]:
     return out
 
 
-async def _seed_hsn_codes(db: AsyncSession, gst_by_rate: dict[Decimal, GstRate]) -> None:
+async def _seed_hsn_codes(
+    db: AsyncSession, gst_by_rate: dict[Decimal, GstRate]
+) -> None:
     existing = {h.code for h in (await db.execute(select(HsnCode))).scalars()}
     for spec in HSN_CODES:
         code = spec["code"]
@@ -215,7 +227,9 @@ async def run() -> dict[str, int]:
             ("tax_rules", TaxRule),
             ("courier_partners", CourierPartner),
         ):
-            counts[label] = (await db.execute(select(model))).scalars().unique().all().__len__()
+            counts[label] = (
+                (await db.execute(select(model))).scalars().unique().all().__len__()
+            )
         return counts
 
 

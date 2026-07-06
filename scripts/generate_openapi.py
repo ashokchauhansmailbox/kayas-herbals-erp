@@ -13,6 +13,7 @@ CI diff-checks these files against the committed baseline. Any route change
 that is not reflected in the baseline fails the "openapi-contract" job and
 must be re-committed with the code change that triggered it.
 """
+
 from __future__ import annotations
 
 import json
@@ -66,7 +67,9 @@ def _write_yaml(spec: dict) -> Path:
             fh.write("\n")
         return path
     with path.open("w", encoding="utf-8") as fh:
-        yaml.safe_dump(spec, fh, sort_keys=True, default_flow_style=False, allow_unicode=True)
+        yaml.safe_dump(
+            spec, fh, sort_keys=True, default_flow_style=False, allow_unicode=True
+        )
     return path
 
 

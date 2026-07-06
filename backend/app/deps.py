@@ -1,15 +1,15 @@
 """FastAPI dependency wiring."""
+
 from __future__ import annotations
 
 import uuid
 from typing import Annotated, AsyncIterator
 
-from fastapi import Depends, Header, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.errors import DomainError
 from app.core.security import AuthError, TokenClaims, verify_token
 from app.db.session import get_session_factory
+from fastapi import Depends, Header, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:
@@ -32,7 +32,9 @@ def _extract_bearer(authorization: str | None) -> str:
         raise AuthError("auth.missing_bearer", "Authorization header missing")
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise AuthError("auth.malformed_bearer", "Authorization must be 'Bearer <token>'")
+        raise AuthError(
+            "auth.malformed_bearer", "Authorization must be 'Bearer <token>'"
+        )
     return parts[1]
 
 

@@ -1,10 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from .core.config import get_settings
-from .core.logging import configure_logging
-from .core.errors import DomainError, domain_handler, http_handler, validation_handler, unhandled
+
 from .api.v1 import api_v1
+from .core.config import get_settings
+from .core.errors import (
+    DomainError,
+    domain_handler,
+    http_handler,
+    unhandled,
+    validation_handler,
+)
+from .core.logging import configure_logging
 
 configure_logging()
 settings = get_settings()
@@ -31,6 +38,7 @@ app.add_exception_handler(RequestValidationError, validation_handler)
 app.add_exception_handler(Exception, unhandled)
 
 app.include_router(api_v1, prefix="/api/v1")
+
 
 @app.get("/health")
 async def health():

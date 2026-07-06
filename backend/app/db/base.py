@@ -3,9 +3,9 @@
 Every model MUST inherit from `Base` so Alembic's autogenerate picks it up
 and index / constraint names are deterministic across environments.
 """
+
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
-
 
 # Alembic + PostgreSQL naming convention (see docs/architecture/03-sqlalchemy-alembic.md).
 NAMING_CONVENTION = {

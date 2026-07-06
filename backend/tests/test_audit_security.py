@@ -1,12 +1,12 @@
 """Audit + activity logging tests + OWASP-adjacent security scenarios."""
+
 from __future__ import annotations
 
 import uuid
 
 import pytest
-from sqlalchemy import select
-
 from app.models.identity import ActivityLog, AuditLog
+from sqlalchemy import select
 
 
 @pytest.mark.asyncio
@@ -14,7 +14,11 @@ async def test_role_update_writes_audit_log(client, mint, db):
     admin = await mint(role_codes=["super_admin"])
     h = {"Authorization": f"Bearer {admin.token}"}
     # create a custom role
-    r = await client.post("/api/v1/roles", headers=h, json={"code": "audit-role-1", "name": "R1", "permissions": []})
+    r = await client.post(
+        "/api/v1/roles",
+        headers=h,
+        json={"code": "audit-role-1", "name": "R1", "permissions": []},
+    )
     assert r.status_code == 201
     role_id = r.json()["id"]
     # update it
@@ -24,10 +28,16 @@ async def test_role_update_writes_audit_log(client, mint, db):
     assert r.status_code == 200
     # audit row must exist
     rows = (
-        await db.execute(
-            select(AuditLog).where(AuditLog.entity == "role", AuditLog.entity_id == uuid.UUID(role_id))
+        (
+            await db.execute(
+                select(AuditLog).where(
+                    AuditLog.entity == "role", AuditLog.entity_id == uuid.UUID(role_id)
+                )
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     actions = {r.action for r in rows}
     assert "create" in actions and "update" in actions
     # diff should be non-null on the update row
@@ -41,8 +51,10 @@ async def test_me_writes_activity_log(client, mint, db):
     tu = await mint(role_codes=["customer"])
     await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
     rows = (
-        await db.execute(select(ActivityLog).where(ActivityLog.actor_id == tu.id))
-    ).scalars().all()
+        (await db.execute(select(ActivityLog).where(ActivityLog.actor_id == tu.id)))
+        .scalars()
+        .all()
+    )
     assert any(r.event == "auth.me" for r in rows)
 
 
@@ -122,12 +134,18 @@ async def test_owasp_wrong_signing_algorithm_rejected(client):
     import base64
     import json
 
-    header = base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).rstrip(b"=")
+    header = base64.urlsafe_b64encode(
+        json.dumps({"alg": "none", "typ": "JWT"}).encode()
+    ).rstrip(b"=")
     payload = base64.urlsafe_b64encode(
-        json.dumps({"sub": str(uuid.uuid4()), "aud": "authenticated", "exp": 9999999999}).encode()
+        json.dumps(
+            {"sub": str(uuid.uuid4()), "aud": "authenticated", "exp": 9999999999}
+        ).encode()
     ).rstrip(b"=")
     token = f"{header.decode()}.{payload.decode()}."
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
     assert r.status_code == 401
 
 

@@ -4,17 +4,24 @@ Also handles session tracking (BR-USR-04): every incoming token's `jti` is
 recorded in the `sessions` table on first use; subsequent requests reject
 tokens whose session has been revoked.
 """
+
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from app.core.security import AuthError, TokenClaims
+from app.models.identity import (
+    Permission,
+    Role,
+    RolePermission,
+    Session,
+    User,
+    UserRole,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.security import AuthError, TokenClaims
-from app.models.identity import Permission, Role, RolePermission, Session, User, UserRole
 
 
 @dataclass
@@ -52,7 +59,9 @@ async def _ensure_session(db: AsyncSession, user: User, claims: TokenClaims) -> 
         raise AuthError("auth.session_revoked", "Session has been revoked")
 
 
-async def _load_permissions(db: AsyncSession, user_id: uuid.UUID) -> tuple[tuple[str, ...], frozenset[str]]:
+async def _load_permissions(
+    db: AsyncSession, user_id: uuid.UUID
+) -> tuple[tuple[str, ...], frozenset[str]]:
     stmt = (
         select(Role.code, Permission.code)
         .select_from(UserRole)

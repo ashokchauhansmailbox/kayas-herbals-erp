@@ -1,13 +1,13 @@
 """User, Role, Permission, Invitation, Audit schemas — all in one compact module."""
+
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import EmailStr, Field
-
 from app.schemas.common import ORMModel
+from pydantic import EmailStr, Field
 
 
 # -------------------- Users --------------------

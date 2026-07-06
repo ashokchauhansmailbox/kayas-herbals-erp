@@ -11,6 +11,7 @@ Token minting is used ONLY by tests (see tests/factories.py) so we can
 produce valid / expired / tampered / wrong-audience tokens without
 depending on a live Supabase project.
 """
+
 from __future__ import annotations
 
 import time
@@ -20,14 +21,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-
 from app.core.config import get_settings
 from app.core.errors import DomainError
 
 
 @dataclass(frozen=True)
 class TokenClaims:
-    sub: uuid.UUID       # subject (Supabase user id)
+    sub: uuid.UUID  # subject (Supabase user id)
     email: str | None
     aud: str
     iss: str | None
@@ -116,7 +116,9 @@ def mint_token(
         payload["iss"] = iss
     if extra:
         payload.update(extra)
-    return jwt.encode(payload, secret or settings.SUPABASE_JWT_SECRET, algorithm="HS256")
+    return jwt.encode(
+        payload, secret or settings.SUPABASE_JWT_SECRET, algorithm="HS256"
+    )
 
 
 def utcnow() -> datetime:

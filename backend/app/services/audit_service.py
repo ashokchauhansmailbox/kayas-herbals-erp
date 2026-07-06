@@ -10,17 +10,17 @@ The context inserts a single `audit_logs` row on __aexit__(no-exception),
 using `deepdiff` to compute the field-level diff. All writes happen on the
 same AsyncSession as the business mutation, guaranteeing atomicity.
 """
+
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
+from app.models.identity import ActivityLog, AuditLog
 from deepdiff import DeepDiff
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models.identity import ActivityLog, AuditLog
 
 
 def _to_serializable(value: Any) -> Any:

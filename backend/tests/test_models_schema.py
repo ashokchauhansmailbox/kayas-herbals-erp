@@ -5,12 +5,13 @@ Verifies that every mapped class:
     * has the expected mixin columns
     * uses PostgreSQL-appropriate types where relevant
 """
+
 from __future__ import annotations
 
 import pytest
+from app.db.base import Base
 
 from app import models
-from app.db.base import Base
 
 # Sprint 1.1 tables.
 IDENTITY_TABLES = {
@@ -57,7 +58,9 @@ INVENTORY_TABLES = {
     "stock_alerts",
 }
 
-EXPECTED_TABLES = IDENTITY_TABLES | MASTER_DATA_TABLES | CATALOG_TABLES | INVENTORY_TABLES
+EXPECTED_TABLES = (
+    IDENTITY_TABLES | MASTER_DATA_TABLES | CATALOG_TABLES | INVENTORY_TABLES
+)
 
 # Tables that must carry timestamp columns.
 TIMESTAMPED = EXPECTED_TABLES - {
@@ -137,9 +140,9 @@ def test_uuid_pks_have_gen_random_uuid_default():
         id_col = tbl.c["id"]
         assert id_col.primary_key, f"{name}.id must be PK"
         assert id_col.server_default is not None, f"{name}.id needs server_default"
-        assert "gen_random_uuid" in str(id_col.server_default.arg), (
-            f"{name}.id server_default is {id_col.server_default.arg!r}"
-        )
+        assert "gen_random_uuid" in str(
+            id_col.server_default.arg
+        ), f"{name}.id server_default is {id_col.server_default.arg!r}"
 
 
 def test_audit_log_is_wide():
@@ -155,7 +158,14 @@ def test_activity_log_shape():
 
 
 def test_master_data_actor_columns():
-    for name in {"units", "gst_rates", "hsn_codes", "categories", "brands", "warehouses"}:
+    for name in {
+        "units",
+        "gst_rates",
+        "hsn_codes",
+        "categories",
+        "brands",
+        "warehouses",
+    }:
         tbl = Base.metadata.tables[name]
         assert "created_by" in tbl.c
         assert "updated_by" in tbl.c
@@ -189,33 +199,47 @@ def test_inventory_models_reexported():
 
 def test_product_unique_constraints():
     products = Base.metadata.tables["products"]
-    unique_cols = {tuple(sorted(c.name for c in con.columns)) for con in products.constraints if con.__class__.__name__ == "UniqueConstraint"}
+    unique_cols = {
+        tuple(sorted(c.name for c in con.columns))
+        for con in products.constraints
+        if con.__class__.__name__ == "UniqueConstraint"
+    }
     assert ("sku",) in unique_cols, "products.sku must be UNIQUE"
     assert ("slug",) in unique_cols, "products.slug must be UNIQUE"
 
 
 def test_variant_barcode_unique():
     variants = Base.metadata.tables["product_variants"]
-    unique_cols = {tuple(sorted(c.name for c in con.columns)) for con in variants.constraints if con.__class__.__name__ == "UniqueConstraint"}
+    unique_cols = {
+        tuple(sorted(c.name for c in con.columns))
+        for con in variants.constraints
+        if con.__class__.__name__ == "UniqueConstraint"
+    }
     assert ("sku",) in unique_cols, "product_variants.sku must be UNIQUE"
     assert ("barcode",) in unique_cols, "product_variants.barcode must be UNIQUE"
 
 
 def test_stock_transfer_check_constraints():
     tbl = Base.metadata.tables["stock_transfers"]
-    ck_names = {c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"}
+    ck_names = {
+        c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"
+    }
     assert "ck_stock_transfers_different_warehouses" in ck_names
 
 
 def test_stock_ledger_qty_nonzero_check():
     tbl = Base.metadata.tables["stock_ledger"]
-    ck_names = {c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"}
+    ck_names = {
+        c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"
+    }
     assert "ck_stock_ledger_qty_nonzero" in ck_names
 
 
 def test_stock_snapshot_available_nonnegative_check():
     tbl = Base.metadata.tables["stock_snapshots"]
-    ck_names = {c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"}
+    ck_names = {
+        c.name for c in tbl.constraints if c.__class__.__name__ == "CheckConstraint"
+    }
     assert "ck_stock_snapshots_available_nonnegative" in ck_names
 
 

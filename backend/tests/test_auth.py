@@ -1,8 +1,6 @@
 """Authentication tests — token verification, expiry, audience, signature."""
-from __future__ import annotations
 
-import time
-import uuid
+from __future__ import annotations
 
 import pytest
 
@@ -18,7 +16,9 @@ async def test_me_requires_bearer(client):
 @pytest.mark.asyncio
 async def test_me_success(client, mint):
     tu = await mint(role_codes=["customer"])
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 200
     data = r.json()
     assert data["email"] == tu.email
@@ -30,7 +30,9 @@ async def test_me_success(client, mint):
 @pytest.mark.asyncio
 async def test_expired_token_rejected(client, mint):
     tu = await mint(role_codes=["customer"], ttl_seconds=-10)
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "auth.token_expired"
 
@@ -38,7 +40,9 @@ async def test_expired_token_rejected(client, mint):
 @pytest.mark.asyncio
 async def test_wrong_audience_rejected(client, mint):
     tu = await mint(role_codes=["customer"], aud="wrong-audience")
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "auth.invalid_audience"
 
@@ -47,15 +51,19 @@ async def test_wrong_audience_rejected(client, mint):
 async def test_tampered_signature_rejected(client, mint):
     tu = await mint(role_codes=["customer"])
     tampered = tu.token[:-4] + "AAAA"
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tampered}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tampered}"}
+    )
     assert r.status_code == 401
     assert r.json()["error"]["code"] in {"auth.invalid_signature", "auth.invalid_token"}
 
 
 @pytest.mark.asyncio
 async def test_wrong_signing_secret_rejected(client, mint):
-    tu = await mint(role_codes=["customer"], secret="not-the-real-secret")
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
+    tu = await mint(role_codes=["customer"], secret="not-the-real-secret-but-32-bytes-long-x")
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 401
 
 
@@ -85,7 +93,9 @@ async def test_logout_revokes_session(client, mint):
 @pytest.mark.asyncio
 async def test_suspended_user_rejected(client, mint):
     tu = await mint(role_codes=["customer"], status="suspended")
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "auth.user_suspended"
 
@@ -97,7 +107,9 @@ async def test_missing_sub_rejected(client, mint):
     from app.core.security import mint_token
 
     token = mint_token(sub="not-a-uuid")
-    r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "auth.invalid_subject"
 

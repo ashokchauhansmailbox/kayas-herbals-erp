@@ -3,6 +3,7 @@
 Requires a live Postgres reachable via DATABASE_URL_TEST_SYNC.
 Runs against `kaya_bos_test` so it never mutates the dev DB.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -36,12 +37,16 @@ def test_upgrade_head_creates_expected_tables(clean_test_db: str):
     _run_alembic(clean_test_db, "upgrade", "head")
     engine = create_engine(clean_test_db)
     with engine.connect() as conn:
-        rows = conn.execute(
-            text(
-                "SELECT tablename FROM pg_tables "
-                "WHERE schemaname = 'public' ORDER BY tablename"
+        rows = (
+            conn.execute(
+                text(
+                    "SELECT tablename FROM pg_tables "
+                    "WHERE schemaname = 'public' ORDER BY tablename"
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
     engine.dispose()
     assert "alembic_version" in rows
     for expected in (
@@ -90,11 +95,13 @@ def test_stock_valuation_view_exists(clean_test_db: str):
     _run_alembic(clean_test_db, "upgrade", "head")
     engine = create_engine(clean_test_db)
     with engine.connect() as conn:
-        views = conn.execute(
-            text(
-                "SELECT viewname FROM pg_views WHERE schemaname = 'public'"
+        views = (
+            conn.execute(
+                text("SELECT viewname FROM pg_views WHERE schemaname = 'public'")
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
     engine.dispose()
     assert "v_stock_valuation" in views
 
@@ -104,12 +111,16 @@ def test_downgrade_base_removes_all_tables(clean_test_db: str):
     _run_alembic(clean_test_db, "downgrade", "base")
     engine = create_engine(clean_test_db)
     with engine.connect() as conn:
-        rows = conn.execute(
-            text(
-                "SELECT tablename FROM pg_tables "
-                "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
+        rows = (
+            conn.execute(
+                text(
+                    "SELECT tablename FROM pg_tables "
+                    "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
     engine.dispose()
     assert rows == [], f"leftover tables after downgrade base: {rows}"
 
@@ -118,11 +129,13 @@ def test_enums_installed_after_upgrade(clean_test_db: str):
     _run_alembic(clean_test_db, "upgrade", "head")
     engine = create_engine(clean_test_db)
     with engine.connect() as conn:
-        types = conn.execute(
-            text(
-                "SELECT typname FROM pg_type WHERE typtype = 'e' ORDER BY typname"
+        types = (
+            conn.execute(
+                text("SELECT typname FROM pg_type WHERE typtype = 'e' ORDER BY typname")
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
     engine.dispose()
     for enum in (
         "user_status",
@@ -142,9 +155,11 @@ def test_extensions_installed(clean_test_db: str):
     _run_alembic(clean_test_db, "upgrade", "head")
     engine = create_engine(clean_test_db)
     with engine.connect() as conn:
-        exts = conn.execute(
-            text("SELECT extname FROM pg_extension ORDER BY extname")
-        ).scalars().all()
+        exts = (
+            conn.execute(text("SELECT extname FROM pg_extension ORDER BY extname"))
+            .scalars()
+            .all()
+        )
     engine.dispose()
     for ext in ("pgcrypto", "pg_trgm", "citext"):
         assert ext in exts, f"missing extension: {ext}"

@@ -21,6 +21,7 @@ Design notes (from docs/architecture/02-database-schema.md):
       without FK constraints yet — Sprint 1.3 (purchase) will add the
       FKs once `vendors` / `purchase_orders` tables exist.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -28,6 +29,9 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
+from app.db.base import Base
+from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
+from app.db.types import PGUUID, uuid_pk
 from sqlalchemy import (
     Boolean,
     Date,
@@ -41,10 +45,6 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
-from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
-from app.db.types import PGUUID, uuid_pk
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +126,9 @@ class ProductVariant(Base, TimestampMixin, ActorMixin, SoftDeleteMixin, VersionM
         ForeignKey("units.id", ondelete="RESTRICT"),
         nullable=True,
     )
-    barcode: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True)
+    barcode: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, unique=True
+    )
     qr_code_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("true")
@@ -153,7 +155,9 @@ class ProductImage(Base, TimestampMixin, ActorMixin, SoftDeleteMixin):
     )
     url: Mapped[str] = mapped_column(Text, nullable=False)
     alt: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    sort_order: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     is_primary: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
@@ -264,10 +268,14 @@ class PurchasePriceHistory(Base):
         ForeignKey("product_variants.id", ondelete="CASCADE"),
         nullable=False,
     )
-    vendor_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    vendor_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
     po_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
-    currency: Mapped[str] = mapped_column(String(8), nullable=False, server_default=text("'INR'"))
+    currency: Mapped[str] = mapped_column(
+        String(8), nullable=False, server_default=text("'INR'")
+    )
     quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), nullable=True)
     at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")

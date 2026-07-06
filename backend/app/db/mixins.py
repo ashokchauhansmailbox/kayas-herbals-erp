@@ -8,6 +8,7 @@
 Compose in this order so column order in migrations is stable:
     class Order(Base, TimestampMixin, ActorMixin, SoftDeleteMixin, VersionMixin): ...
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -64,7 +65,9 @@ class SoftDeleteMixin:
 
 
 class VersionMixin:
-    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
 
     # SQLAlchemy optimistic lock (opt-in per model via __mapper_args__).
     # We do NOT set __mapper_args__ globally because mixins can't safely

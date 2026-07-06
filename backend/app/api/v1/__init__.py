@@ -1,4 +1,5 @@
 """Sprint 1.3 API wiring."""
+
 from fastapi import APIRouter
 
 from .routes import audit, auth, health, invitations, users

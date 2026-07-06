@@ -1,11 +1,14 @@
 from functools import lru_cache
 from typing import List
-from pydantic import Field, AnyUrl
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"
+    )
 
     APP_ENV: str = "dev"
     APP_NAME: str = "Kaya BOS"
@@ -30,4 +33,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    # pydantic-settings loads DATABASE_URL from the environment; MyPy cannot see that.
+    return Settings()  # type: ignore[call-arg]

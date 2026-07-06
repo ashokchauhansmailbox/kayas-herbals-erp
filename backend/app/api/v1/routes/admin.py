@@ -1,16 +1,14 @@
 """Role + Permission catalogue routes."""
+
 from __future__ import annotations
-
-import uuid
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
 
 from app.deps import DbSession, RequestId, require
 from app.models.identity import Permission, Role, RolePermission
 from app.schemas.admin import PermissionOut, RoleCreateIn, RoleOut, RoleUpdateIn
 from app.services.audit_service import AuditContext
 from app.services.auth_service import Principal
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete, select
 
 roles_router = APIRouter()
 permissions_router = APIRouter()
@@ -18,12 +16,16 @@ permissions_router = APIRouter()
 
 async def _serialize_role(db, role: Role) -> RoleOut:
     codes = (
-        await db.execute(
-            select(Permission.code)
-            .join(RolePermission, RolePermission.permission_id == Permission.id)
-            .where(RolePermission.role_id == role.id)
+        (
+            await db.execute(
+                select(Permission.code)
+                .join(RolePermission, RolePermission.permission_id == Permission.id)
+                .where(RolePermission.role_id == role.id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return RoleOut(
         id=role.id,
         code=role.code,
@@ -34,15 +36,50 @@ async def _serialize_role(db, role: Role) -> RoleOut:
     )
 
 
-@roles_router.get("", response_model=list[RoleOut], dependencies=[Depends(require("roles.read"))])
+async def _batch_perms_for_roles(
+    db, role_ids: list
+) -> dict:
+    if not role_ids:
+        return {}
+    rows = (
+        await db.execute(
+            select(RolePermission.role_id, Permission.code)
+            .join(Permission, Permission.id == RolePermission.permission_id)
+            .where(RolePermission.role_id.in_(role_ids))
+        )
+    ).all()
+    out: dict = {rid: [] for rid in role_ids}
+    for rid, code in rows:
+        out[rid].append(code)
+    return out
+
+
+@roles_router.get(
+    "", response_model=list[RoleOut], dependencies=[Depends(require("roles.read"))]
+)
 async def list_roles(db: DbSession) -> list[RoleOut]:
     roles = (await db.execute(select(Role).order_by(Role.code))).scalars().all()
-    return [await _serialize_role(db, r) for r in roles]
+    perms_by_role = await _batch_perms_for_roles(db, [r.id for r in roles])
+    return [
+        RoleOut(
+            id=r.id,
+            code=r.code,
+            name=r.name,
+            description=r.description,
+            is_system=r.is_system,
+            permissions=sorted(perms_by_role.get(r.id, [])),
+        )
+        for r in roles
+    ]
 
 
-@roles_router.get("/{code}", response_model=RoleOut, dependencies=[Depends(require("roles.read"))])
+@roles_router.get(
+    "/{code}", response_model=RoleOut, dependencies=[Depends(require("roles.read"))]
+)
 async def get_role(code: str, db: DbSession) -> RoleOut:
-    role = (await db.execute(select(Role).where(Role.code == code))).scalar_one_or_none()
+    role = (
+        await db.execute(select(Role).where(Role.code == code))
+    ).scalar_one_or_none()
     if role is None:
         raise HTTPException(404, "Role not found")
     return await _serialize_role(db, role)
@@ -55,13 +92,22 @@ async def create_role(
     request_id: RequestId,
     principal: Principal = Depends(require("roles.manage")),
 ) -> RoleOut:
-    if (await db.execute(select(Role).where(Role.code == payload.code))).scalar_one_or_none():
+    if (
+        await db.execute(select(Role).where(Role.code == payload.code))
+    ).scalar_one_or_none():
         raise HTTPException(409, f"Role code exists: {payload.code}")
-    role = Role(code=payload.code, name=payload.name, description=payload.description, is_system=False)
+    role = Role(
+        code=payload.code,
+        name=payload.name,
+        description=payload.description,
+        is_system=False,
+    )
     db.add(role)
     await db.flush()
     for pcode in payload.permissions:
-        perm = (await db.execute(select(Permission).where(Permission.code == pcode))).scalar_one_or_none()
+        perm = (
+            await db.execute(select(Permission).where(Permission.code == pcode))
+        ).scalar_one_or_none()
         if perm is None:
             raise HTTPException(400, f"Unknown permission: {pcode}")
         db.add(RolePermission(role_id=role.id, permission_id=perm.id))
@@ -86,7 +132,9 @@ async def update_role(
     request_id: RequestId,
     principal: Principal = Depends(require("roles.manage")),
 ) -> RoleOut:
-    role = (await db.execute(select(Role).where(Role.code == code))).scalar_one_or_none()
+    role = (
+        await db.execute(select(Role).where(Role.code == code))
+    ).scalar_one_or_none()
     if role is None:
         raise HTTPException(404, "Role not found")
     if role.is_system:
@@ -106,9 +154,13 @@ async def update_role(
         if payload.description is not None:
             role.description = payload.description
         if payload.permissions is not None:
-            await db.execute(RolePermission.__table__.delete().where(RolePermission.role_id == role.id))
+            await db.execute(
+                delete(RolePermission).where(RolePermission.role_id == role.id)
+            )
             for pcode in payload.permissions:
-                perm = (await db.execute(select(Permission).where(Permission.code == pcode))).scalar_one_or_none()
+                perm = (
+                    await db.execute(select(Permission).where(Permission.code == pcode))
+                ).scalar_one_or_none()
                 if perm is None:
                     raise HTTPException(400, f"Unknown permission: {pcode}")
                 db.add(RolePermission(role_id=role.id, permission_id=perm.id))
@@ -123,7 +175,9 @@ async def delete_role(
     request_id: RequestId,
     principal: Principal = Depends(require("roles.manage")),
 ) -> None:
-    role = (await db.execute(select(Role).where(Role.code == code))).scalar_one_or_none()
+    role = (
+        await db.execute(select(Role).where(Role.code == code))
+    ).scalar_one_or_none()
     if role is None:
         raise HTTPException(404, "Role not found")
     if role.is_system:
@@ -141,8 +195,14 @@ async def delete_role(
         await db.delete(role)
 
 
-@permissions_router.get("", response_model=list[PermissionOut], dependencies=[Depends(require("permissions.read"))])
-async def list_permissions(db: DbSession, module: str | None = None) -> list[PermissionOut]:
+@permissions_router.get(
+    "",
+    response_model=list[PermissionOut],
+    dependencies=[Depends(require("permissions.read"))],
+)
+async def list_permissions(
+    db: DbSession, module: str | None = None
+) -> list[PermissionOut]:
     stmt = select(Permission)
     if module:
         stmt = stmt.where(Permission.module == module)

@@ -4,18 +4,19 @@
 - GET /auth/sessions   → active + revoked sessions for the current user
 - POST /auth/logout    → revoke the current JWT's jti
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
-
 from app.deps import DbSession, get_current_user
-from app.models.identity import Session as SessionRow, User
+from app.models.identity import Session as SessionRow
+from app.models.identity import User
 from app.schemas.auth import MeOut, SessionOut
 from app.services.audit_service import log_activity
 from app.services.auth_service import Principal, revoke_session
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
 
 router = APIRouter()
 
@@ -28,7 +29,9 @@ async def me(
     u: User = principal.user
     # Track last_login_at on every /me hit — safe under session token lifetime.
     u.last_login_at = datetime.now(timezone.utc)
-    await log_activity(db, actor_id=u.id, event="auth.me", entity="user", entity_id=u.id)
+    await log_activity(
+        db, actor_id=u.id, event="auth.me", entity="user", entity_id=u.id
+    )
     return MeOut(
         id=u.id,
         email=u.email,
@@ -46,12 +49,16 @@ async def list_sessions(
     principal: Principal = Depends(get_current_user),
 ) -> list[SessionOut]:
     rows = (
-        await db.execute(
-            select(SessionRow)
-            .where(SessionRow.user_id == principal.id)
-            .order_by(SessionRow.created_at.desc())
+        (
+            await db.execute(
+                select(SessionRow)
+                .where(SessionRow.user_id == principal.id)
+                .order_by(SessionRow.created_at.desc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [SessionOut.model_validate(r) for r in rows]
 
 

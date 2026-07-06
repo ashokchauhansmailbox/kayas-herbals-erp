@@ -6,13 +6,13 @@ Verifies:
     * Effective permission set for a role matches its seed spec.
     * Cross-role isolation (customer cannot read audit).
 """
+
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import select
-
 from app.models.identity import Permission, Role, RolePermission
 from app.seeds.roles import ROLES
+from sqlalchemy import select
 
 
 @pytest.mark.asyncio
@@ -36,16 +36,22 @@ async def test_every_seeded_role_has_expected_permissions(db):
                     .join(RolePermission, RolePermission.permission_id == Permission.id)
                     .where(RolePermission.role_id == role.id)
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         expected = set(spec["permissions"])  # type: ignore[index]
-        assert actual == expected, f"role {code}: unexpected drift.\nmissing={expected-actual}\nextra={actual-expected}"
+        assert (
+            actual == expected
+        ), f"role {code}: unexpected drift.\nmissing={expected-actual}\nextra={actual-expected}"
 
 
 @pytest.mark.asyncio
 async def test_customer_cannot_read_audit(client, mint):
     tu = await mint(role_codes=["customer"])
-    r = await client.get("/api/v1/audit/logs", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/audit/logs", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 403
     assert r.json()["error"]["code"] == "rbac.forbidden"
     assert r.json()["error"]["details"]["permission"] == "audit.read"
@@ -54,14 +60,18 @@ async def test_customer_cannot_read_audit(client, mint):
 @pytest.mark.asyncio
 async def test_customer_cannot_list_users(client, mint):
     tu = await mint(role_codes=["customer"])
-    r = await client.get("/api/v1/users", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/users", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 403
 
 
 @pytest.mark.asyncio
 async def test_super_admin_reads_users(client, mint):
     tu = await mint(role_codes=["super_admin"])
-    r = await client.get("/api/v1/users", headers={"Authorization": f"Bearer {tu.token}"})
+    r = await client.get(
+        "/api/v1/users", headers={"Authorization": f"Bearer {tu.token}"}
+    )
     assert r.status_code == 200
 
 

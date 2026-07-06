@@ -17,6 +17,7 @@ Design invariants (docs/architecture/07-business-rules.md):
 
 The stock_valuation view is created in migration 005 (not represented here).
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -24,6 +25,9 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
+from app.db.base import Base
+from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
+from app.db.types import PGUUID, uuid_pk
 from sqlalchemy import (
     CheckConstraint,
     Date,
@@ -38,10 +42,6 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
-from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
-from app.db.types import PGUUID, uuid_pk
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,9 @@ class Batch(Base, TimestampMixin, ActorMixin, SoftDeleteMixin, VersionMixin):
     mfg_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     expiry_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     qty_manufactured: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
-    cost_per_unit: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), nullable=True)
+    cost_per_unit: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(14, 4), nullable=True
+    )
     supplier_ref: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -89,7 +91,9 @@ class StockAdjustment(Base, TimestampMixin, ActorMixin, SoftDeleteMixin, Version
     status: Mapped[str] = mapped_column(
         String(24), nullable=False, server_default=text("'draft'")
     )
-    posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    posted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     posted_by: Mapped[Optional[UUID]] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -123,8 +127,12 @@ class StockTransfer(Base, TimestampMixin, ActorMixin, SoftDeleteMixin, VersionMi
     status: Mapped[str] = mapped_column(
         String(24), nullable=False, server_default=text("'draft'")
     )
-    dispatched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    received_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    dispatched_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    received_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
@@ -289,7 +297,9 @@ class StockSnapshot(Base, TimestampMixin):
         ),
         nullable=False,
     )
-    qty: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False, server_default=text("0"))
+    qty: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False, server_default=text("0")
+    )
     last_movement_id: Mapped[Optional[UUID]] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("stock_ledger.id", ondelete="SET NULL"),
@@ -343,13 +353,19 @@ class StockAlert(Base, TimestampMixin):
         ForeignKey("batches.id", ondelete="CASCADE"),
         nullable=True,
     )
-    threshold_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), nullable=True)
-    current_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), nullable=True)
+    threshold_value: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(14, 4), nullable=True
+    )
+    current_value: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(14, 4), nullable=True
+    )
     message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     raised_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     resolved_by: Mapped[Optional[UUID]] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),

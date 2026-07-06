@@ -1,7 +1,6 @@
 """System roles + role → permission mapping (docs/architecture/05-rbac.md)."""
-from __future__ import annotations
 
-from typing import Callable
+from __future__ import annotations
 
 from app.seeds.permissions import PERMISSIONS
 
@@ -38,7 +37,13 @@ ROLES: list[dict[str, object]] = [
         "description": "Owns products, categories, HSN, brands, images, documents, certifications.",
         "is_system": True,
         "permissions": _union(
-            _pick("master_data.read", "hsn.manage", "categories.manage", "brands.manage", "units.manage"),
+            _pick(
+                "master_data.read",
+                "hsn.manage",
+                "categories.manage",
+                "brands.manage",
+                "units.manage",
+            ),
             _by_module("catalog"),
         ),
     },
@@ -48,7 +53,12 @@ ROLES: list[dict[str, object]] = [
         "description": "Owns warehouses, stock, batches, transfers, alerts.",
         "is_system": True,
         "permissions": _union(
-            _pick("master_data.read", "warehouses.manage", "products.read", "variants.manage"),
+            _pick(
+                "master_data.read",
+                "warehouses.manage",
+                "products.read",
+                "variants.manage",
+            ),
             _by_module("inventory"),
             _pick("reports.inventory"),
         ),
@@ -59,7 +69,13 @@ ROLES: list[dict[str, object]] = [
         "description": "Orders, distributor pricing, quotes, returns approval, refunds initiation.",
         "is_system": True,
         "permissions": _union(
-            _pick("master_data.read", "products.read", "variants.manage", "prices.read", "prices.update"),
+            _pick(
+                "master_data.read",
+                "products.read",
+                "variants.manage",
+                "prices.read",
+                "prices.update",
+            ),
             _by_module("orders"),
             _pick(
                 "distributors.read",
@@ -83,7 +99,13 @@ ROLES: list[dict[str, object]] = [
         "description": "Invoices, credit/debit notes, payments, reconciliation, GST exports, audit.",
         "is_system": True,
         "permissions": _union(
-            _pick("master_data.read", "gst.manage", "hsn.manage", "tax_rules.manage", "payment_terms.manage"),
+            _pick(
+                "master_data.read",
+                "gst.manage",
+                "hsn.manage",
+                "tax_rules.manage",
+                "payment_terms.manage",
+            ),
             _by_module("invoices"),
             _by_module("payments"),
             _by_module("finance"),

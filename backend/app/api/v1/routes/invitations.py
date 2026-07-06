@@ -1,29 +1,39 @@
 """User invitation routes."""
+
 from __future__ import annotations
 
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-
 from app.deps import DbSession, RequestId, require
 from app.models.identity import Role, UserInvitation
 from app.schemas.admin import InvitationCreateIn, InvitationOut
 from app.services.audit_service import AuditContext
 from app.services.auth_service import Principal
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 
 router = APIRouter()
 
 INVITE_TTL = timedelta(days=7)
 
 
-@router.get("", response_model=list[InvitationOut], dependencies=[Depends(require("users.invite"))])
+@router.get(
+    "",
+    response_model=list[InvitationOut],
+    dependencies=[Depends(require("users.invite"))],
+)
 async def list_invitations(db: DbSession) -> list[InvitationOut]:
     rows = (
-        await db.execute(select(UserInvitation).order_by(UserInvitation.created_at.desc()))
-    ).scalars().all()
+        (
+            await db.execute(
+                select(UserInvitation).order_by(UserInvitation.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
     return [InvitationOut.model_validate(r) for r in rows]
 
 
@@ -57,7 +67,11 @@ async def create_invitation(
         request_id=request_id,
     ) as ctx:
         ctx.before = None
-        ctx.after = {"email": inv.email, "role": role.code, "expires_at": inv.expires_at.isoformat()}
+        ctx.after = {
+            "email": inv.email,
+            "role": role.code,
+            "expires_at": inv.expires_at.isoformat(),
+        }
     return InvitationOut.model_validate(inv)
 
 
@@ -69,7 +83,9 @@ async def revoke_invitation(
     principal: Principal = Depends(require("users.invite")),
 ) -> None:
     inv = (
-        await db.execute(select(UserInvitation).where(UserInvitation.id == invitation_id))
+        await db.execute(
+            select(UserInvitation).where(UserInvitation.id == invitation_id)
+        )
     ).scalar_one_or_none()
     if inv is None:
         raise HTTPException(404, "Invitation not found")

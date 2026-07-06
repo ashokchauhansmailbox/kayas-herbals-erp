@@ -6,6 +6,7 @@ works the same way as `docs/api/openapi.json`.
 Usage:
     python scripts/generate_postman.py
 """
+
 from __future__ import annotations
 
 import json
@@ -28,7 +29,9 @@ except ImportError:
 
 
 def _method_order(method: str) -> int:
-    return {"GET": 0, "POST": 1, "PATCH": 2, "PUT": 3, "DELETE": 4}.get(method.upper(), 9)
+    return {"GET": 0, "POST": 1, "PATCH": 2, "PUT": 3, "DELETE": 4}.get(
+        method.upper(), 9
+    )
 
 
 def _folder_for(path: str, tag_by_path: dict[str, str]) -> str:
@@ -65,7 +68,12 @@ def build(spec: dict) -> dict:
                 },
                 "response": [],
             }
-            body = op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
+            body = (
+                op.get("requestBody", {})
+                .get("content", {})
+                .get("application/json", {})
+                .get("schema")
+            )
             if body is not None:
                 request["request"]["body"] = {
                     "mode": "raw",
@@ -80,7 +88,8 @@ def build(spec: dict) -> dict:
     return {
         "info": {
             "name": info.get("title", "Kaya BOS API"),
-            "description": info.get("description") or f"Version {info.get('version','')}",
+            "description": info.get("description")
+            or f"Version {info.get('version','')}",
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         },
         "variable": [
@@ -101,7 +110,9 @@ def main() -> int:
     with path.open("w", encoding="utf-8") as fh:
         json.dump(collection, fh, indent=2, sort_keys=True)
         fh.write("\n")
-    print(f"Wrote {path.relative_to(REPO_ROOT)} — {sum(len(f['item']) for f in collection['item'])} requests")
+    print(
+        f"Wrote {path.relative_to(REPO_ROOT)} — {sum(len(f['item']) for f in collection['item'])} requests"
+    )
     return 0
 
 

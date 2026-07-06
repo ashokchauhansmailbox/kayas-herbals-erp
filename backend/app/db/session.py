@@ -3,19 +3,19 @@
 Production code uses `async with get_session() as session` (dependency).
 Tests may override `_engine` / `_session_factory` via `configure_engine`.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
+from app.core.config import get_settings
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-
-from app.core.config import get_settings
 
 _engine: Optional[AsyncEngine] = None
 _session_factory: Optional[async_sessionmaker[AsyncSession]] = None

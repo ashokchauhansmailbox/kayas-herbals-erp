@@ -4,12 +4,12 @@
 `/api/v1/health/ready` → DB reachable + `SELECT 1` succeeds.
 `/api/v1/health/db`    → alembic head + row counts (Sprint 1.1 verification aid).
 """
+
 from __future__ import annotations
 
+from app.db.session import get_engine
 from fastapi import APIRouter
 from sqlalchemy import text
-
-from app.db.session import get_engine
 
 router = APIRouter(prefix="/health")
 
@@ -37,11 +37,15 @@ async def db_status() -> dict:
             await conn.execute(text("SELECT version_num FROM alembic_version"))
         ).scalar_one_or_none()
         tables = (
-            await conn.execute(
-                text(
-                    "SELECT tablename FROM pg_tables "
-                    "WHERE schemaname = 'public' ORDER BY tablename"
+            (
+                await conn.execute(
+                    text(
+                        "SELECT tablename FROM pg_tables "
+                        "WHERE schemaname = 'public' ORDER BY tablename"
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
     return {"alembic_revision": rev, "tables": list(tables), "table_count": len(tables)}

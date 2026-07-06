@@ -6,6 +6,7 @@ Tables:
 
 See docs/architecture/08-master-data.md for ownership, seeds, and CRUD scope.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -13,6 +14,9 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
+from app.db.base import Base
+from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
+from app.db.types import PGUUID, jsonb_column, uuid_pk
 from sqlalchemy import (
     Boolean,
     Date,
@@ -23,14 +27,9 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    UniqueConstraint,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
-from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
-from app.db.types import PGUUID, jsonb_column, uuid_pk
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +110,9 @@ class Category(Base, TimestampMixin, ActorMixin, SoftDeleteMixin):
         nullable=True,
     )
     image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    sort_order: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("true")
     )

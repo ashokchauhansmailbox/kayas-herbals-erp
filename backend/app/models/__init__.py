@@ -2,6 +2,7 @@
 
 Any new model file MUST be imported here or Alembic will not detect it.
 """
+
 from app.db.base import Base  # noqa: F401
 from app.models import catalog, identity, inventory, master_data  # noqa: F401
 from app.models.catalog import (  # noqa: F401

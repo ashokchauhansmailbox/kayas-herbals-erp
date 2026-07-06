@@ -1,30 +1,57 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from .logging import log
 import uuid
+from typing import cast
+
+from fastapi import HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from .logging import log
+
 
 class DomainError(Exception):
     def __init__(self, code: str, message: str, status: int = 400, details=None):
-        self.code, self.message, self.status, self.details = code, message, status, details or {}
+        self.code, self.message, self.status, self.details = (
+            code,
+            message,
+            status,
+            details or {},
+        )
+
 
 def _envelope(code, message, details, request_id, status):
-    return JSONResponse(status_code=status, content={"error": {"code": code, "message": message, "details": details, "request_id": request_id}})
+    return JSONResponse(
+        status_code=status,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "details": details,
+                "request_id": request_id,
+            }
+        },
+    )
 
-async def domain_handler(request: Request, exc: DomainError):
+
+async def domain_handler(request: Request, exc: Exception) -> JSONResponse:
+    e = cast(DomainError, exc)
     rid = request.headers.get("X-Request-Id", str(uuid.uuid4()))
-    log.warning("domain_error", code=exc.code, rid=rid)
-    return _envelope(exc.code, exc.message, exc.details, rid, exc.status)
+    log.warning("domain_error", code=e.code, rid=rid)
+    return _envelope(e.code, e.message, e.details, rid, e.status)
 
-async def http_handler(request: Request, exc: HTTPException):
+
+async def http_handler(request: Request, exc: Exception) -> JSONResponse:
+    e = cast(HTTPException, exc)
     rid = request.headers.get("X-Request-Id", str(uuid.uuid4()))
-    return _envelope("http_error", str(exc.detail), {}, rid, exc.status_code)
+    return _envelope("http_error", str(e.detail), {}, rid, e.status_code)
 
-async def validation_handler(request: Request, exc: RequestValidationError):
+
+async def validation_handler(request: Request, exc: Exception) -> JSONResponse:
+    e = cast(RequestValidationError, exc)
     rid = request.headers.get("X-Request-Id", str(uuid.uuid4()))
-    return _envelope("validation_error", "Invalid input", exc.errors(), rid, 422)
+    return _envelope("validation_error", "Invalid input", e.errors(), rid, 422)
 
-async def unhandled(request: Request, exc: Exception):
+
+async def unhandled(request: Request, exc: Exception) -> JSONResponse:
     rid = request.headers.get("X-Request-Id", str(uuid.uuid4()))
     log.exception("unhandled", rid=rid)
     return _envelope("internal_error", "Something went wrong", {}, rid, 500)

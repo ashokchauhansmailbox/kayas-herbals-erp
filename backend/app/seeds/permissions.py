@@ -4,6 +4,7 @@ Every capability the platform enforces. `code` follows `<module>.<action>`.
 Grouped by module for readability. This list is the source of truth for
 migration `dm_006_seed_static.py` — DO NOT reorder or rename without an ADR.
 """
+
 from __future__ import annotations
 
 PERMISSIONS: list[tuple[str, str, str]] = [
@@ -23,7 +24,11 @@ PERMISSIONS: list[tuple[str, str, str]] = [
     ("sessions.read", "sessions", "View own or team sessions"),
     ("sessions.revoke", "sessions", "Revoke a session (force logout)"),
     # ---------- master data ----------
-    ("master_data.read", "master_data", "Read master data (units, gst, hsn, brands, warehouses, ...)"),
+    (
+        "master_data.read",
+        "master_data",
+        "Read master data (units, gst, hsn, brands, warehouses, ...)",
+    ),
     ("units.manage", "master_data", "Create / update / delete units"),
     ("gst.manage", "master_data", "Create / update / retire GST rates"),
     ("hsn.manage", "master_data", "Create / update HSN codes"),
@@ -63,7 +68,11 @@ PERMISSIONS: list[tuple[str, str, str]] = [
     ("distributors.read", "distributors", "View distributors"),
     ("distributors.manage", "distributors", "Onboard / update distributors"),
     ("distributors.kyc_verify", "distributors", "Verify distributor KYC"),
-    ("distributors.pricing_manage", "distributors", "Manage tier pricing / price lists"),
+    (
+        "distributors.pricing_manage",
+        "distributors",
+        "Manage tier pricing / price lists",
+    ),
     ("distributors.credit_manage", "distributors", "Manage distributor credit limits"),
     ("distributors.ledger_read", "distributors", "View distributor ledger"),
     # ---------- customers ----------

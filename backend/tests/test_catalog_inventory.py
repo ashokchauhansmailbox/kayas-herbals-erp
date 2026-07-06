@@ -10,6 +10,7 @@ tests don't leak state. Verifies:
       `stock_ledger`) accept append-only rows and expose them via natural
       indexes.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -44,7 +45,9 @@ def db_url(sync_db_url: str) -> str:
 @pytest.fixture()
 def session(db_url: str):
     engine = create_engine(db_url, future=True)
-    factory = sessionmaker(bind=engine, expire_on_commit=False, future=True, class_=Session)
+    factory = sessionmaker(
+        bind=engine, expire_on_commit=False, future=True, class_=Session
+    )
     session = factory()
     try:
         yield session
@@ -85,9 +88,7 @@ def session(db_url: str):
 def _seed_masters(session: Session) -> dict[str, uuid.UUID]:
     """Insert the minimum master-data rows required for catalog + inventory."""
     unit_id = session.execute(
-        text(
-            "INSERT INTO units (code, name) VALUES (:c, :n) RETURNING id"
-        ),
+        text("INSERT INTO units (code, name) VALUES (:c, :n) RETURNING id"),
         {"c": f"u-{uuid.uuid4().hex[:6]}", "n": "gram"},
     ).scalar_one()
     gst_id = session.execute(
@@ -103,27 +104,19 @@ def _seed_masters(session: Session) -> dict[str, uuid.UUID]:
         {"c": f"HSN-{uuid.uuid4().hex[:6]}", "g": gst_id},
     ).scalar_one()
     cat_id = session.execute(
-        text(
-            "INSERT INTO categories (name, slug) VALUES (:n, :s) RETURNING id"
-        ),
+        text("INSERT INTO categories (name, slug) VALUES (:n, :s) RETURNING id"),
         {"n": "Powders", "s": f"powders-{uuid.uuid4().hex[:6]}"},
     ).scalar_one()
     brand_id = session.execute(
-        text(
-            "INSERT INTO brands (name, slug) VALUES (:n, :s) RETURNING id"
-        ),
+        text("INSERT INTO brands (name, slug) VALUES (:n, :s) RETURNING id"),
         {"n": f"Kaya-{uuid.uuid4().hex[:6]}", "s": f"kaya-{uuid.uuid4().hex[:6]}"},
     ).scalar_one()
     wh_id = session.execute(
-        text(
-            "INSERT INTO warehouses (code, name) VALUES (:c, :n) RETURNING id"
-        ),
+        text("INSERT INTO warehouses (code, name) VALUES (:c, :n) RETURNING id"),
         {"c": f"WH-{uuid.uuid4().hex[:6]}", "n": "Main"},
     ).scalar_one()
     wh2_id = session.execute(
-        text(
-            "INSERT INTO warehouses (code, name) VALUES (:c, :n) RETURNING id"
-        ),
+        text("INSERT INTO warehouses (code, name) VALUES (:c, :n) RETURNING id"),
         {"c": f"WH-{uuid.uuid4().hex[:6]}", "n": "Overflow"},
     ).scalar_one()
     session.commit()
@@ -258,12 +251,16 @@ def test_price_history_journal_append_only_shape(session: Session):
             {"v": p["variant"], "p": Decimal(price)},
         )
     session.commit()
-    rows = session.execute(
-        text(
-            "SELECT price FROM product_price_history WHERE variant_id = :v ORDER BY at"
-        ),
-        {"v": p["variant"]},
-    ).scalars().all()
+    rows = (
+        session.execute(
+            text(
+                "SELECT price FROM product_price_history WHERE variant_id = :v ORDER BY at"
+            ),
+            {"v": p["variant"]},
+        )
+        .scalars()
+        .all()
+    )
     assert [str(r) for r in rows] == ["449.00", "479.00", "499.00"]
 
 
@@ -280,11 +277,19 @@ def test_purchase_price_history_records_without_vendor_fk(session: Session):
             VALUES (:v, :vendor, :po, :price, :qty)
             """
         ),
-        {"v": p["variant"], "vendor": fake_vendor, "po": fake_po, "price": Decimal("250.00"), "qty": Decimal("200")},
+        {
+            "v": p["variant"],
+            "vendor": fake_vendor,
+            "po": fake_po,
+            "price": Decimal("250.00"),
+            "qty": Decimal("200"),
+        },
     )
     session.commit()
     row = session.execute(
-        text("SELECT vendor_id, po_id, price FROM purchase_price_history WHERE variant_id = :v"),
+        text(
+            "SELECT vendor_id, po_id, price FROM purchase_price_history WHERE variant_id = :v"
+        ),
         {"v": p["variant"]},
     ).one()
     assert row.vendor_id == fake_vendor
