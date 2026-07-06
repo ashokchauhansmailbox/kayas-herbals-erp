@@ -123,3 +123,21 @@ async def test_sessions_lists_user_sessions(client, mint):
     assert r.status_code == 200
     body = r.json()
     assert any(s["jti"] for s in body)
+
+
+@pytest.mark.asyncio
+async def test_email_collision_on_autoprovision_returns_401(client, mint):
+    """A JWT with a *new* sub but an *existing* email must not raise a raw
+    UniqueViolation — auto-provision returns a clean 401 auth.email_conflict."""
+    import uuid
+
+    from app.core.security import mint_token
+
+    tu = await mint(role_codes=["customer"])  # seeds a user with this email
+    # Mint a *different* sub with the same email — previously 500.
+    token = mint_token(sub=uuid.uuid4(), email=tu.email)
+    r = await client.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r.status_code == 401
+    assert r.json()["error"]["code"] == "auth.email_conflict"

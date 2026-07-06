@@ -87,11 +87,20 @@ async def load_current_principal(db: AsyncSession, claims: TokenClaims) -> Princ
     ).scalar_one_or_none()
     if user is None:
         # Auto-provision on first login (BR-USR-01): local mirror of Supabase user.
-        user = User(
-            id=claims.sub,
-            email=claims.email or f"{claims.sub}@unknown.local",
-            status="active",
-        )
+        # Guard against `uq_users_email` collisions — a distinct local row with
+        # this email would otherwise raise a raw IntegrityError as 500. Refuse
+        # cleanly so the operator can reconcile the two identities.
+        email = claims.email or f"{claims.sub}@unknown.local"
+        if claims.email:
+            clash = (
+                await db.execute(select(User).where(User.email == claims.email))
+            ).scalar_one_or_none()
+            if clash is not None:
+                raise AuthError(
+                    "auth.email_conflict",
+                    "Email is already registered under a different user id",
+                )
+        user = User(id=claims.sub, email=email, status="active")
         db.add(user)
         await db.flush()
     else:

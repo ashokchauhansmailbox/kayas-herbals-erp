@@ -1,0 +1,26 @@
+{
+  "summary": "Sprint 1.3 Quality Gate retest — verified fix for email-collision auto-provision bug in GET /api/v1/auth/me. Full backend suite 120/120 passed, new regression test test_email_collision_on_autoprovision_returns_401 passes, OpenAPI drift check clean, ruff + mypy clean.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/backend/tests/test_auth.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix in app/services/auth_service.py::load_current_principal is correct — pre-checks users.email before INSERT and raises AuthError('auth.email_conflict') producing HTTP 401 with unified envelope. Latent 500 from uq_users_email is now resolved cleanly."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100%", "frontend": "N/A (skipped per request)" },
+  "seed_data_creation": "None — regression uses in-memory JWT mint and DB fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sprint 1.3 Quality Gate closed. Backend: 120 tests pass, ruff+mypy clean, OpenAPI drift check clean. Email-collision auto-provision path returns 401 auth.email_conflict as expected.",
+  "checks_executed": {
+    "pytest_full_suite": "120 passed in 11.81s (exit 0)",
+    "target_regression_test": "test_email_collision_on_autoprovision_returns_401 PASSED",
+    "openapi_drift": "API contracts match baseline (exit 0)",
+    "ruff": "All checks passed (exit 0)",
+    "mypy": "Success: no issues found in 41 source files (exit 0)"
+  }
+}
