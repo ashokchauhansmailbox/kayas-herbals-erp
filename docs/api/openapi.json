@@ -812,6 +812,13 @@
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [
@@ -861,6 +868,7 @@
             "required": false,
             "schema": {
               "default": 1,
+              "minimum": 1,
               "title": "Page",
               "type": "integer"
             }
@@ -871,6 +879,8 @@
             "required": false,
             "schema": {
               "default": 50,
+              "maximum": 200,
+              "minimum": 1,
               "title": "Page Size",
               "type": "integer"
             }
@@ -963,6 +973,7 @@
             "required": false,
             "schema": {
               "default": 1,
+              "minimum": 1,
               "title": "Page",
               "type": "integer"
             }
@@ -973,6 +984,8 @@
             "required": false,
             "schema": {
               "default": 50,
+              "maximum": 200,
+              "minimum": 1,
               "title": "Page Size",
               "type": "integer"
             }
@@ -1840,6 +1853,7 @@
             "required": false,
             "schema": {
               "default": 1,
+              "minimum": 1,
               "title": "Page",
               "type": "integer"
             }
@@ -1850,6 +1864,8 @@
             "required": false,
             "schema": {
               "default": 25,
+              "maximum": 200,
+              "minimum": 1,
               "title": "Page Size",
               "type": "integer"
             }

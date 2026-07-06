@@ -104,8 +104,9 @@ class TestUser:
 
 @pytest_asyncio.fixture(scope="session")
 async def _async_engine(async_db_url: str):
-    from app.db import session as session_module
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.db import session as session_module
 
     engine = create_async_engine(async_db_url, future=True, pool_pre_ping=True)
     session_module._engine = engine
@@ -127,8 +128,9 @@ async def db(_async_engine):
 
 @pytest_asyncio.fixture()
 async def client(_async_engine) -> AsyncIterator["AsyncClient"]:  # noqa: F821
-    from app.main import app
     from httpx import ASGITransport, AsyncClient
+
+    from app.main import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -137,9 +139,10 @@ async def client(_async_engine) -> AsyncIterator["AsyncClient"]:  # noqa: F821
 
 @pytest_asyncio.fixture()
 async def mint(db):
+    from sqlalchemy import select
+
     from app.core.security import mint_token
     from app.models.identity import Role, User, UserRole
-    from sqlalchemy import select
 
     async def _factory(
         *,

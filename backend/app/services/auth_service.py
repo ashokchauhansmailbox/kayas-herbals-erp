@@ -11,6 +11,9 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.security import AuthError, TokenClaims
 from app.models.identity import (
     Permission,
@@ -20,8 +23,6 @@ from app.models.identity import (
     User,
     UserRole,
 )
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass

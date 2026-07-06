@@ -14,9 +14,6 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from app.db.base import Base
-from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
-from app.db.types import PGUUID, jsonb_column, uuid_pk
 from sqlalchemy import (
     Boolean,
     Date,
@@ -30,6 +27,10 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base import Base
+from app.db.mixins import ActorMixin, SoftDeleteMixin, TimestampMixin, VersionMixin
+from app.db.types import PGUUID, jsonb_column, uuid_pk
 
 
 # ---------------------------------------------------------------------------

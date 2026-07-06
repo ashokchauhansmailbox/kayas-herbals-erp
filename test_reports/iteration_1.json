@@ -1,0 +1,27 @@
+{
+  "summary": "Sprint 1.3 Quality Gate regression verification. All 8 requested gates PASSED: health endpoints (live/ready/db with alembic_revision=005, table_count=34), auth (401 anon, 200 with mint_token JWT + auto-provision), RBAC N+1 fix (POST /roles 201 with echoed perms, PATCH /roles/{code} 200, invalid perm codes return 400 with offending code in message), OpenAPI drift script (exit 0, 'API contracts match baseline'), alembic upgrade->downgrade base->upgrade head on kaya_bos_gate ends at revision 005, seed idempotency (all 11 counts match exactly on both runs: 89/9/8/5/12/6/1/1/5/4/5), pytest suite 119/119 passed in 11.77s, ruff 0 issues, mypy 0 issues in 41 files. One latent bug found in auth auto-provision (not part of the 4 fixes under test) — see backend_issues.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/v1/auth/me", "issue": "Auto-provision INSERT uses JWT sub (uuid) as primary key but does not upsert on the uq_users_email unique constraint. If a JWT is minted with a NEW sub but an email that already exists in users, the endpoint returns 500 IntegrityError (UniqueViolationError on uq_users_email). Reproduced with email='qa@example.com'. Workaround: use a unique email per mint_token call. Recommend: either ON CONFLICT (email) DO UPDATE SET id=..., or lookup existing user by email before insert. Not part of the 4 fixes under this Quality Gate, but worth flagging."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "OPTIONAL (not blocking Sprint 1.4): Harden /api/v1/auth/me auto-provision against email uniqueness collisions when JWT sub is new but email is recycled. Currently returns 500 instead of resolving to the existing user."
+  ],
+  "critical_code_review_comments": [
+    "The 4 Quality Gate fixes are cleanly applied and verified: supervisor now runs app.main:app (verified via reachable /api/v1/* routes), N+1 batched fetch in POST/PATCH /roles works and correctly errors on unknown perms with the offending code named, OpenAPI/Postman baselines match, and ruff/mypy are clean under the new pyproject.toml.",
+    "Legacy /app/backend/server.py (Mongo MVP) still on disk — recommend deleting or renaming to avoid confusion in Sprint 1.4.",
+    "auth/me auto-provision is not idempotent by email — see minor issue above."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (backend-only test)"},
+  "test_credentials": "Postgres kaya/kaya_dev on localhost:5432, dbs kaya_bos/kaya_bos_test/kaya_bos_gate. JWTs minted via app.core.security.mint_token with SUPABASE_JWT_SECRET from backend/.env.",
+  "seed_data_creation": "kaya_bos_gate seeded twice via `python -m app.seeds.run` — counts identical on both runs (permissions=89, roles=9, units=8, gst_rates=5, hsn_codes=12, categories=6, brands=1, warehouses=1, payment_terms=5, tax_rules=4, courier_partners=5). Test role created and deleted cleanly on kaya_bos.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 8 Sprint 1.3 Quality Gate criteria pass. pytest 119/119, ruff/mypy clean, alembic reversible on kaya_bos_gate to revision 005, seed idempotent, OpenAPI drift clean, all API endpoints behave as spec'd. One non-blocking latent bug in auth/me auto-provision on email collision — reproduced and documented but is outside the 4 fixes under test.",
+  "rca of the issue": "auth/me 500 on email collision: In app/api/v1/routes/auth.py the auto-provision logic likely does `session.add(User(id=jwt.sub, email=jwt.email, ...))` then flush. Postgres enforces uq_users_email. When qa@example.com already existed from a prior test run under a different uuid, the INSERT raised UniqueViolationError -> IntegrityError -> generic 500. Mitigation: SELECT user by email first, or use INSERT ... ON CONFLICT (email) DO UPDATE SET last_login_at=... RETURNING *."
+}

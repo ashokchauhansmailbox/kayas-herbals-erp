@@ -24,7 +24,6 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-
 revision: str = "004"
 down_revision: Union[str, None] = "003"
 branch_labels: Union[str, Sequence[str], None] = None

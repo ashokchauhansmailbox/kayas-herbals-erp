@@ -10,9 +10,10 @@ Verifies:
 from __future__ import annotations
 
 import pytest
+from sqlalchemy import select
+
 from app.models.identity import Permission, Role, RolePermission
 from app.seeds.roles import ROLES
-from sqlalchemy import select
 
 
 @pytest.mark.asyncio

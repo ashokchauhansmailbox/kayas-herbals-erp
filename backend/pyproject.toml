@@ -1,0 +1,15 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Sprint 1.3 Quality Gate — pin default rules + import ordering (I).
+# Defaults: E, F, W. Adds I for isort ordering, B for common bugs.
+select = ["E", "F", "W", "I", "B"]
+ignore = [
+    "B008",  # FastAPI Depends() in defaults is idiomatic.
+    "E501",  # Line length handled by formatter; some URLs/strings exceed.
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "migrations"]

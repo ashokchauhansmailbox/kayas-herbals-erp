@@ -9,9 +9,9 @@ Verifies that every mapped class:
 from __future__ import annotations
 
 import pytest
-from app.db.base import Base
 
 from app import models
+from app.db.base import Base
 
 # Sprint 1.1 tables.
 IDENTITY_TABLES = {

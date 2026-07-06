@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import uuid
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.deps import DbSession, RequestId, require
 from app.models.identity import Role, User, UserRole
 from app.schemas.admin import UserOut, UserRoleAssignIn, UserUpdateIn
 from app.schemas.common import Page
 from app.services.audit_service import AuditContext
 from app.services.auth_service import Principal
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 

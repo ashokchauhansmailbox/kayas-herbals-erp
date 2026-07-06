@@ -5,12 +5,13 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
+
 from app.deps import DbSession, require
 from app.models.identity import ActivityLog, AuditLog
 from app.schemas.admin import ActivityLogOut, AuditLogOut
 from app.schemas.common import Page
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
 
 router = APIRouter()
 

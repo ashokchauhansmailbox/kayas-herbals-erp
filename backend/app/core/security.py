@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
+
 from app.core.config import get_settings
 from app.core.errors import DomainError
 

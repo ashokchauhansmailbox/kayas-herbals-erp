@@ -18,9 +18,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from app.models.identity import ActivityLog, AuditLog
 from deepdiff import DeepDiff
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.identity import ActivityLog, AuditLog
 
 
 def _to_serializable(value: Any) -> Any:

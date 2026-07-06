@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete, select
+
 from app.deps import DbSession, RequestId, require
 from app.models.identity import Permission, Role, RolePermission
 from app.schemas.admin import PermissionOut, RoleCreateIn, RoleOut, RoleUpdateIn
 from app.services.audit_service import AuditContext
 from app.services.auth_service import Principal
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete, select
 
 roles_router = APIRouter()
 permissions_router = APIRouter()
@@ -104,13 +105,20 @@ async def create_role(
     )
     db.add(role)
     await db.flush()
-    for pcode in payload.permissions:
-        perm = (
-            await db.execute(select(Permission).where(Permission.code == pcode))
-        ).scalar_one_or_none()
-        if perm is None:
-            raise HTTPException(400, f"Unknown permission: {pcode}")
-        db.add(RolePermission(role_id=role.id, permission_id=perm.id))
+    if payload.permissions:
+        perms = {
+            p.code: p
+            for p in (
+                await db.execute(
+                    select(Permission).where(Permission.code.in_(payload.permissions))
+                )
+            ).scalars()
+        }
+        missing = [c for c in payload.permissions if c not in perms]
+        if missing:
+            raise HTTPException(400, f"Unknown permission: {missing[0]}")
+        for pcode in payload.permissions:
+            db.add(RolePermission(role_id=role.id, permission_id=perms[pcode].id))
     async with AuditContext(
         db,
         actor_id=principal.id,
@@ -157,13 +165,26 @@ async def update_role(
             await db.execute(
                 delete(RolePermission).where(RolePermission.role_id == role.id)
             )
-            for pcode in payload.permissions:
-                perm = (
-                    await db.execute(select(Permission).where(Permission.code == pcode))
-                ).scalar_one_or_none()
-                if perm is None:
-                    raise HTTPException(400, f"Unknown permission: {pcode}")
-                db.add(RolePermission(role_id=role.id, permission_id=perm.id))
+            if payload.permissions:
+                perms = {
+                    p.code: p
+                    for p in (
+                        await db.execute(
+                            select(Permission).where(
+                                Permission.code.in_(payload.permissions)
+                            )
+                        )
+                    ).scalars()
+                }
+                missing = [c for c in payload.permissions if c not in perms]
+                if missing:
+                    raise HTTPException(400, f"Unknown permission: {missing[0]}")
+                for pcode in payload.permissions:
+                    db.add(
+                        RolePermission(
+                            role_id=role.id, permission_id=perms[pcode].id
+                        )
+                    )
         ctx.after = {"name": role.name, "description": role.description}
     return await _serialize_role(db, role)
 

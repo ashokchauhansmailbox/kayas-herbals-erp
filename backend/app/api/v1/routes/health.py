@@ -7,9 +7,10 @@
 
 from __future__ import annotations
 
-from app.db.session import get_engine
 from fastapi import APIRouter
 from sqlalchemy import text
+
+from app.db.session import get_engine
 
 router = APIRouter(prefix="/health")
 

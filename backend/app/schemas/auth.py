@@ -6,8 +6,9 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from app.schemas.common import ORMModel
 from pydantic import EmailStr, Field
+
+from app.schemas.common import ORMModel
 
 
 class MeOut(ORMModel):

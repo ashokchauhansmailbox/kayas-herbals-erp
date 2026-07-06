@@ -23,12 +23,13 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from app.db.base import Base
-from app.db.mixins import SoftDeleteMixin, TimestampMixin, VersionMixin
-from app.db.types import PGUUID, jsonb_column, uuid_pk
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base import Base
+from app.db.mixins import SoftDeleteMixin, TimestampMixin, VersionMixin
+from app.db.types import PGUUID, jsonb_column, uuid_pk
 
 
 # ---------------------------------------------------------------------------

@@ -5,11 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, AsyncIterator
 
+from fastapi import Depends, Header, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.errors import DomainError
 from app.core.security import AuthError, TokenClaims, verify_token
 from app.db.session import get_session_factory
-from fastapi import Depends, Header, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:

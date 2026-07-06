@@ -9,14 +9,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+
 from app.deps import DbSession, get_current_user
 from app.models.identity import Session as SessionRow
 from app.models.identity import User
 from app.schemas.auth import MeOut, SessionOut
 from app.services.audit_service import log_activity
 from app.services.auth_service import Principal, revoke_session
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
 
 router = APIRouter()
 

@@ -23,7 +23,6 @@ load_dotenv(BACKEND_DIR / ".env")
 
 from app.models import Base  # noqa: E402  – registers all models
 
-
 config = context.config
 
 if config.config_file_name is not None:

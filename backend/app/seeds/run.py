@@ -13,6 +13,9 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.session import get_session_factory
 from app.models.identity import Permission, Role, RolePermission
 from app.models.master_data import (
@@ -39,8 +42,6 @@ from app.seeds.master_data import (
 )
 from app.seeds.permissions import PERMISSIONS
 from app.seeds.roles import ROLES
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def _seed_permissions(db: AsyncSession) -> dict[str, Permission]:

@@ -5,8 +5,9 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from app.models.identity import ActivityLog, AuditLog
 from sqlalchemy import select
+
+from app.models.identity import ActivityLog, AuditLog
 
 
 @pytest.mark.asyncio
