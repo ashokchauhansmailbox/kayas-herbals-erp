@@ -67,3 +67,64 @@ CI on `main` will run the full pipeline (ruff, mypy, pytest, alembic
 cycle, OpenAPI drift) automatically. Any subsequent PR that breaks
 schema, adds a route without regenerating `docs/api/openapi.{json,yaml}`,
 or introduces model↔migration drift will fail before merge.
+
+---
+
+## Sprint 1.3 Quality Gate — publish + tag (2026-02-06)
+
+The Quality Gate closed clean (see `docs/sprints/S1.3_QUALITY_GATE.md`,
+overall score **9.0 / 10**). Ship it in one push:
+
+### 4. Save the Quality Gate branch
+- Click **Save to GitHub**.
+- Branch: `sprint/1.3-quality-gate`.
+- Commit message: `Sprint 1.3 Quality Gate — supervisor fix, N+1 batching, auth email-collision guard, ruff pyproject`.
+- Base for PR: `main`.
+
+### 5. PR body (paste)
+> **Sprint 1.3 Quality Gate**
+> Overall production-readiness: **9.0 / 10** — zero Critical / High findings open.
+>
+> **Fixes**
+> - 🔴 Supervisor was crash-looping on legacy `backend/server.py` (Mongo MVP, `KeyError: JWT_SECRET`). Repointed `[program:backend]` in `/etc/supervisor/conf.d/supervisord.conf` to `uvicorn app.main:app`. This is a preview-container environment fix; `docker-compose.yml` already targets `app.main:app`.
+> - 🟠 N+1 in `POST/PATCH /api/v1/roles` (`admin.py`) — permission lookup batched with `Permission.code.in_()`; role create/update went from 89 → 3 queries.
+> - 🟠 `GET /api/v1/auth/me` returned 500 on `uq_users_email` collision during auto-provision (`auth_service.py`). Now raises `AuthError("auth.email_conflict")` → 401 with the unified error envelope. New regression test.
+> - 🟡 OpenAPI + Postman baseline regenerated (pagination bounds).
+> - 🟡 30 files re-ordered by isort (ruff `--select=I001 --fix`). New `backend/pyproject.toml` pins ruff `E, F, W, I, B` so drift is caught by CI.
+>
+> **Verification (all green)**
+> - ruff `E, F, W, I, B` — clean on `backend/app`, `backend/tests`, `backend/migrations`, `scripts`.
+> - mypy-strict — 0 issues in 41 source files.
+> - bandit — 0 findings, 3 238 LOC.
+> - pip-audit — 0 CVEs.
+> - pytest — **120 passed in ~12 s** (2 xdist workers, `loadscope`).
+> - alembic `upgrade head → downgrade base → upgrade head` reversible; ends at `005`.
+> - alembic check — 0 drift.
+> - Seed idempotent (identical counts across two runs).
+> - OpenAPI / Postman drift — clean.
+> - Health endpoints — `/live` `/ready` `/db` all 200.
+> - Frontend — serves 200 on 3000.
+>
+> **Deliverables**
+> - `docs/sprints/S1.3_QUALITY_GATE.md` — full 10-section report.
+> - `CHANGELOG.md` — Quality Gate entry.
+> - `backend/pyproject.toml` — new.
+> - `backend/tests/test_auth.py::test_email_collision_on_autoprovision_returns_401` — new regression test.
+> - `docs/api/openapi.{json,yaml}` + `docs/api/postman_collection.json` — refreshed.
+> - `test_reports/iteration_{1,2}.json` — testing-agent evidence.
+>
+> **Known gap (deferred to Sprint 1.6 per PRD roadmap)**
+> - 22 FK columns lack supporting B-tree indexes (cardinality small today; will land as migration `013_indexes.py` alongside triggers/views work already scoped in 1.6).
+
+### 6. Tag the merge
+After the PR merges into `main`, add a lightweight tag via the GitHub UI:
+- Releases → **Draft a new release** → Tag `sprint-1.3-quality-gate` → target `main` → paste the PR body as the release notes.
+
+### 7. Fresh-clone smoke test (optional but recommended)
+```bash
+git clone https://github.com/ashokchauhansmailbox/kayas-herbals-erp
+cd kayas-herbals-erp
+docker compose up --build       # migrations + seed + api on :8001, postgres on :5432
+curl localhost:8001/api/v1/health/db
+cd frontend && yarn && yarn start   # storefront on :3000
+```

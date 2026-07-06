@@ -63,7 +63,7 @@ Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`.
 - `backend/.env.example`, `backend/mypy.ini`, `infra/postgres-init/01-create-test-db.sql`.
 - `conftest.py` refactored to give each pytest-xdist worker its own database (avoids collisions between the migration-cycle suite and integration suites).
 
-### Sprint 1.2 (2026-02-06) — Catalog + Inventory ✅ Ready for review
+### Sprint 1.2 (2026-02-06) — Catalog + Inventory ✅ Complete
 
 - **Catalog models** (`app/models/catalog.py`): `Product`, `ProductVariant`, `ProductImage`, `ProductDocument`, `Certification`, `ProductPriceHistory`, `PurchasePriceHistory`.
 - **Inventory models** (`app/models/inventory.py`): `Batch`, `StockAdjustment`, `StockTransfer`, `StockTransferItem`, `StockLedger`, `StockSnapshot`, `StockAlert`.
@@ -85,7 +85,7 @@ Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`.
 ### P2
 - Sprint 1.7 — Ops runbooks (Backup, DR, Migration, Rollback, Restore, Version-Upgrade) + final OpenAPI + Postman snapshot + release readiness review.
 
-### Sprint 1.3 (2026-02-06) — Auth + RBAC + Audit + Seeds + Route Foundations ✅ Ready for review
+### Sprint 1.3 (2026-02-06) — Auth + RBAC + Audit + Seeds + Route Foundations ✅ Complete (Quality Gate passed)
 
 - **Security core** (`app/core/security.py`): HS256 JWT verify against SUPABASE_JWT_SECRET, `mint_token()` for tests.
 - **Dependencies** (`app/deps.py`): `get_db`, `get_token_claims`, `get_current_user`, `require("perm.code")`, `request_id`.
