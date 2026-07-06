@@ -26,11 +26,33 @@ def _run_alembic(url: str, *args: str) -> None:
 
 @pytest.fixture(scope="module")
 def clean_test_db(sync_db_url: str) -> str:
-    """Downgrade to base before each test module so state is deterministic."""
+    """Downgrade to base before each test module so state is deterministic.
+
+    Re-runs the idempotent seed at teardown so downstream tests scheduled to
+    the same xdist worker see the same baseline (permissions, roles, etc.)
+    that the session-scoped autouse fixture provided.
+    """
+    import os
+
     _run_alembic(sync_db_url, "downgrade", "base")
     yield sync_db_url
-    # Leave DB at head so downstream tools can inspect.
     _run_alembic(sync_db_url, "upgrade", "head")
+    # Re-seed so subsequent test modules on this worker see a populated DB.
+    async_url = sync_db_url.replace(
+        "postgresql+psycopg2://", "postgresql+asyncpg://", 1
+    )
+    result = subprocess.run(
+        ["python", "-m", "app.seeds.run"],
+        cwd=BACKEND_DIR,
+        env={**os.environ, "DATABASE_URL": async_url},
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:  # pragma: no cover — surfaces at teardown
+        raise RuntimeError(
+            f"Re-seed after migration cycle failed:\n"
+            f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
 
 
 def test_upgrade_head_creates_expected_tables(clean_test_db: str):

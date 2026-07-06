@@ -46,6 +46,225 @@ components:
       - at
       title: ActivityLogOut
       type: object
+    AddressIn:
+      additionalProperties: false
+      properties:
+        city:
+          maxLength: 128
+          minLength: 1
+          title: City
+          type: string
+        country:
+          default: IN
+          maxLength: 64
+          minLength: 2
+          title: Country
+          type: string
+        is_default:
+          default: false
+          title: Is Default
+          type: boolean
+        label:
+          default: shipping
+          pattern: ^(billing|shipping|other)$
+          title: Label
+          type: string
+        landmark:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Landmark
+        line1:
+          maxLength: 255
+          minLength: 1
+          title: Line1
+          type: string
+        line2:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Line2
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+        pincode:
+          maxLength: 16
+          minLength: 1
+          title: Pincode
+          type: string
+        recipient_name:
+          maxLength: 255
+          minLength: 1
+          title: Recipient Name
+          type: string
+        state:
+          maxLength: 128
+          minLength: 1
+          title: State
+          type: string
+      required:
+      - recipient_name
+      - line1
+      - city
+      - state
+      - pincode
+      title: AddressIn
+      type: object
+    AddressOut:
+      properties:
+        city:
+          title: City
+          type: string
+        country:
+          title: Country
+          type: string
+        id:
+          format: uuid
+          title: Id
+          type: string
+        is_active:
+          title: Is Active
+          type: boolean
+        is_default:
+          title: Is Default
+          type: boolean
+        label:
+          title: Label
+          type: string
+        landmark:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Landmark
+        line1:
+          title: Line1
+          type: string
+        line2:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Line2
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        pincode:
+          title: Pincode
+          type: string
+        recipient_name:
+          title: Recipient Name
+          type: string
+        state:
+          title: State
+          type: string
+        user_id:
+          format: uuid
+          title: User Id
+          type: string
+      required:
+      - id
+      - user_id
+      - label
+      - recipient_name
+      - phone
+      - line1
+      - line2
+      - landmark
+      - city
+      - state
+      - pincode
+      - country
+      - is_default
+      - is_active
+      title: AddressOut
+      type: object
+    AddressPatch:
+      additionalProperties: false
+      properties:
+        city:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: City
+        country:
+          anyOf:
+          - maxLength: 64
+            minLength: 2
+            type: string
+          - type: 'null'
+          title: Country
+        is_active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+        is_default:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Default
+        label:
+          anyOf:
+          - pattern: ^(billing|shipping|other)$
+            type: string
+          - type: 'null'
+          title: Label
+        landmark:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Landmark
+        line1:
+          anyOf:
+          - maxLength: 255
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Line1
+        line2:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Line2
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+        pincode:
+          anyOf:
+          - maxLength: 16
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Pincode
+        recipient_name:
+          anyOf:
+          - maxLength: 255
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Recipient Name
+        state:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: State
+      title: AddressPatch
+      type: object
     AuditLogOut:
       properties:
         action:
@@ -116,6 +335,474 @@ components:
       - at
       title: AuditLogOut
       type: object
+    CustomerProfileIn:
+      additionalProperties: false
+      description: Full write payload for `PATCH /api/v1/me/profile` (also used for
+        create).
+      properties:
+        avatar_url:
+          anyOf:
+          - maxLength: 2048
+            type: string
+          - type: 'null'
+          title: Avatar Url
+        dob:
+          anyOf:
+          - format: date
+            type: string
+          - type: 'null'
+          title: Dob
+        gender:
+          anyOf:
+          - pattern: ^(male|female|other|undisclosed)$
+            type: string
+          - type: 'null'
+          title: Gender
+        marketing_opt_in:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Marketing Opt In
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+        preferred_language:
+          anyOf:
+          - maxLength: 8
+            type: string
+          - type: 'null'
+          title: Preferred Language
+      title: CustomerProfileIn
+      type: object
+    CustomerProfileOut:
+      properties:
+        avatar_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Avatar Url
+        dob:
+          anyOf:
+          - format: date
+            type: string
+          - type: 'null'
+          title: Dob
+        gender:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gender
+        id:
+          format: uuid
+          title: Id
+          type: string
+        marketing_opt_in:
+          title: Marketing Opt In
+          type: boolean
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        preferred_language:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preferred Language
+        user_id:
+          format: uuid
+          title: User Id
+          type: string
+      required:
+      - id
+      - user_id
+      - phone
+      - dob
+      - gender
+      - avatar_url
+      - marketing_opt_in
+      - preferred_language
+      title: CustomerProfileOut
+      type: object
+    DistributorIn:
+      additionalProperties: false
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        business_name:
+          maxLength: 255
+          minLength: 1
+          title: Business Name
+          type: string
+        code:
+          maxLength: 32
+          minLength: 1
+          title: Code
+          type: string
+        credit_days:
+          default: 0
+          maximum: 365.0
+          minimum: 0.0
+          title: Credit Days
+          type: integer
+        credit_limit:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: string
+          default: '0'
+          title: Credit Limit
+        email:
+          anyOf:
+          - format: email
+            type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Gstin
+        is_active:
+          default: true
+          title: Is Active
+          type: boolean
+        legal_name:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Legal Name
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - maxLength: 16
+            type: string
+          - type: 'null'
+          title: Pan
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+        primary_user_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Primary User Id
+        tier_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Tier Id
+      required:
+      - code
+      - business_name
+      title: DistributorIn
+      type: object
+    DistributorOut:
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        business_name:
+          title: Business Name
+          type: string
+        code:
+          title: Code
+          type: string
+        credit_days:
+          title: Credit Days
+          type: integer
+        credit_limit:
+          title: Credit Limit
+          type: string
+        current_balance:
+          title: Current Balance
+          type: string
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gstin
+        id:
+          format: uuid
+          title: Id
+          type: string
+        is_active:
+          title: Is Active
+          type: boolean
+        kyc_status:
+          title: Kyc Status
+          type: string
+        legal_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Legal Name
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pan
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        primary_user_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Primary User Id
+        tier_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Tier Id
+      required:
+      - id
+      - code
+      - business_name
+      - legal_name
+      - gstin
+      - pan
+      - email
+      - phone
+      - address
+      - tier_id
+      - primary_user_id
+      - credit_limit
+      - credit_days
+      - current_balance
+      - kyc_status
+      - is_active
+      - notes
+      title: DistributorOut
+      type: object
+    DistributorPatch:
+      additionalProperties: false
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        business_name:
+          anyOf:
+          - maxLength: 255
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Business Name
+        credit_days:
+          anyOf:
+          - maximum: 365.0
+            minimum: 0.0
+            type: integer
+          - type: 'null'
+          title: Credit Days
+        credit_limit:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: string
+          - type: 'null'
+          title: Credit Limit
+        email:
+          anyOf:
+          - format: email
+            type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Gstin
+        is_active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+        legal_name:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Legal Name
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - maxLength: 16
+            type: string
+          - type: 'null'
+          title: Pan
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+        primary_user_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Primary User Id
+        tier_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Tier Id
+      title: DistributorPatch
+      type: object
+    DistributorTierIn:
+      additionalProperties: false
+      properties:
+        code:
+          maxLength: 32
+          minLength: 1
+          title: Code
+          type: string
+        default_discount_pct:
+          anyOf:
+          - maximum: 100.0
+            minimum: 0.0
+            type: number
+          - type: string
+          default: '0'
+          title: Default Discount Pct
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        is_active:
+          default: true
+          title: Is Active
+          type: boolean
+        name:
+          maxLength: 128
+          minLength: 1
+          title: Name
+          type: string
+        sort_order:
+          default: 0
+          minimum: 0.0
+          title: Sort Order
+          type: integer
+      required:
+      - code
+      - name
+      title: DistributorTierIn
+      type: object
+    DistributorTierOut:
+      properties:
+        code:
+          title: Code
+          type: string
+        default_discount_pct:
+          title: Default Discount Pct
+          type: string
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        id:
+          format: uuid
+          title: Id
+          type: string
+        is_active:
+          title: Is Active
+          type: boolean
+        name:
+          title: Name
+          type: string
+        sort_order:
+          title: Sort Order
+          type: integer
+      required:
+      - id
+      - code
+      - name
+      - description
+      - default_discount_pct
+      - sort_order
+      - is_active
+      title: DistributorTierOut
+      type: object
+    DistributorTierPatch:
+      additionalProperties: false
+      properties:
+        default_discount_pct:
+          anyOf:
+          - maximum: 100.0
+            minimum: 0.0
+            type: number
+          - type: string
+          - type: 'null'
+          title: Default Discount Pct
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        is_active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+        name:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+        sort_order:
+          anyOf:
+          - minimum: 0.0
+            type: integer
+          - type: 'null'
+          title: Sort Order
+      title: DistributorTierPatch
+      type: object
     HTTPValidationError:
       properties:
         detail:
@@ -178,6 +865,23 @@ components:
       - expires_at
       - created_at
       title: InvitationOut
+      type: object
+    KycVerifyIn:
+      additionalProperties: false
+      properties:
+        rejection_reason:
+          anyOf:
+          - maxLength: 1024
+            type: string
+          - type: 'null'
+          title: Rejection Reason
+        status:
+          pattern: ^(verified|rejected)$
+          title: Status
+          type: string
+      required:
+      - status
+      title: KycVerifyIn
       type: object
     MeOut:
       properties:
@@ -265,6 +969,29 @@ components:
       - total
       title: Page[AuditLogOut]
       type: object
+    Page_DistributorOut_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DistributorOut'
+          title: Items
+          type: array
+        page:
+          title: Page
+          type: integer
+        page_size:
+          title: Page Size
+          type: integer
+        total:
+          title: Total
+          type: integer
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      title: Page[DistributorOut]
+      type: object
     Page_UserOut_:
       properties:
         items:
@@ -287,6 +1014,29 @@ components:
       - page_size
       - total
       title: Page[UserOut]
+      type: object
+    Page_VendorOut_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/VendorOut'
+          title: Items
+          type: array
+        page:
+          title: Page
+          type: integer
+        page_size:
+          title: Page Size
+          type: integer
+        total:
+          title: Total
+          type: integer
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      title: Page[VendorOut]
       type: object
     PermissionOut:
       properties:
@@ -530,6 +1280,271 @@ components:
       - type
       title: ValidationError
       type: object
+    VendorIn:
+      additionalProperties: false
+      description: Payload for `POST /api/v1/vendors`.
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        code:
+          maxLength: 32
+          minLength: 1
+          title: Code
+          type: string
+        credit_days:
+          default: 0
+          maximum: 365.0
+          minimum: 0.0
+          title: Credit Days
+          type: integer
+        currency:
+          default: INR
+          maxLength: 8
+          minLength: 3
+          title: Currency
+          type: string
+        email:
+          anyOf:
+          - format: email
+            type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Gstin
+        is_active:
+          default: true
+          title: Is Active
+          type: boolean
+        legal_name:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Legal Name
+        name:
+          maxLength: 255
+          minLength: 1
+          title: Name
+          type: string
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - maxLength: 16
+            type: string
+          - type: 'null'
+          title: Pan
+        payment_term_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Payment Term Id
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+      required:
+      - code
+      - name
+      title: VendorIn
+      type: object
+    VendorOut:
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        code:
+          title: Code
+          type: string
+        credit_days:
+          title: Credit Days
+          type: integer
+        currency:
+          title: Currency
+          type: string
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gstin
+        id:
+          format: uuid
+          title: Id
+          type: string
+        is_active:
+          title: Is Active
+          type: boolean
+        legal_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Legal Name
+        name:
+          title: Name
+          type: string
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pan
+        payment_term_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Payment Term Id
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+      required:
+      - id
+      - code
+      - name
+      - legal_name
+      - gstin
+      - pan
+      - email
+      - phone
+      - address
+      - payment_term_id
+      - credit_days
+      - currency
+      - is_active
+      - notes
+      title: VendorOut
+      type: object
+    VendorPatch:
+      additionalProperties: false
+      description: Partial-update payload for `PATCH /api/v1/vendors/{id}`.
+      properties:
+        address:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Address
+        credit_days:
+          anyOf:
+          - maximum: 365.0
+            minimum: 0.0
+            type: integer
+          - type: 'null'
+          title: Credit Days
+        currency:
+          anyOf:
+          - maxLength: 8
+            minLength: 3
+            type: string
+          - type: 'null'
+          title: Currency
+        email:
+          anyOf:
+          - format: email
+            type: string
+          - type: 'null'
+          title: Email
+        gstin:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Gstin
+        is_active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+        legal_name:
+          anyOf:
+          - maxLength: 255
+            type: string
+          - type: 'null'
+          title: Legal Name
+        name:
+          anyOf:
+          - maxLength: 255
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+        pan:
+          anyOf:
+          - maxLength: 16
+            type: string
+          - type: 'null'
+          title: Pan
+        payment_term_id:
+          anyOf:
+          - format: uuid
+            type: string
+          - type: 'null'
+          title: Payment Term Id
+        phone:
+          anyOf:
+          - maxLength: 24
+            type: string
+          - type: 'null'
+          title: Phone
+      title: VendorPatch
+      type: object
+    WalletOut:
+      properties:
+        balance:
+          title: Balance
+          type: string
+        currency:
+          title: Currency
+          type: string
+        id:
+          format: uuid
+          title: Id
+          type: string
+        is_active:
+          title: Is Active
+          type: boolean
+        user_id:
+          format: uuid
+          title: User Id
+          type: string
+      required:
+      - id
+      - user_id
+      - currency
+      - balance
+      - is_active
+      title: WalletOut
+      type: object
 info:
   title: Kaya BOS
   version: 1.0.0
@@ -768,6 +1783,414 @@ paths:
       summary: List Sessions
       tags:
       - auth
+  /api/v1/distributor-tiers:
+    get:
+      operationId: list_tiers_api_v1_distributor_tiers_get
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DistributorTierOut'
+                title: Response List Tiers Api V1 Distributor Tiers Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Tiers
+      tags:
+      - distributors
+    post:
+      operationId: create_tier_api_v1_distributor_tiers_post
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistributorTierIn'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorTierOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Tier
+      tags:
+      - distributors
+  /api/v1/distributor-tiers/{code}:
+    delete:
+      operationId: delete_tier_api_v1_distributor_tiers__code__delete
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          title: Code
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Tier
+      tags:
+      - distributors
+    get:
+      operationId: get_tier_api_v1_distributor_tiers__code__get
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          title: Code
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorTierOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Tier
+      tags:
+      - distributors
+    patch:
+      operationId: update_tier_api_v1_distributor_tiers__code__patch
+      parameters:
+      - in: path
+        name: code
+        required: true
+        schema:
+          title: Code
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistributorTierPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorTierOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Update Tier
+      tags:
+      - distributors
+  /api/v1/distributors:
+    get:
+      operationId: list_distributors_api_v1_distributors_get
+      parameters:
+      - in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          title: Page
+          type: integer
+      - in: query
+        name: page_size
+        required: false
+        schema:
+          default: 25
+          maximum: 200
+          minimum: 1
+          title: Page Size
+          type: integer
+      - in: query
+        name: q
+        required: false
+        schema:
+          anyOf:
+          - maxLength: 64
+            type: string
+          - type: 'null'
+          title: Q
+      - in: query
+        name: kyc_status
+        required: false
+        schema:
+          anyOf:
+          - pattern: ^(pending|submitted|verified|rejected)$
+            type: string
+          - type: 'null'
+          title: Kyc Status
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_DistributorOut_'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Distributors
+      tags:
+      - distributors
+    post:
+      operationId: create_distributor_api_v1_distributors_post
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistributorIn'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Distributor
+      tags:
+      - distributors
+  /api/v1/distributors/{distributor_id}:
+    delete:
+      operationId: delete_distributor_api_v1_distributors__distributor_id__delete
+      parameters:
+      - in: path
+        name: distributor_id
+        required: true
+        schema:
+          format: uuid
+          title: Distributor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Distributor
+      tags:
+      - distributors
+    get:
+      operationId: get_distributor_api_v1_distributors__distributor_id__get
+      parameters:
+      - in: path
+        name: distributor_id
+        required: true
+        schema:
+          format: uuid
+          title: Distributor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Distributor
+      tags:
+      - distributors
+    patch:
+      operationId: update_distributor_api_v1_distributors__distributor_id__patch
+      parameters:
+      - in: path
+        name: distributor_id
+        required: true
+        schema:
+          format: uuid
+          title: Distributor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistributorPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Update Distributor
+      tags:
+      - distributors
+  /api/v1/distributors/{distributor_id}/kyc:
+    post:
+      operationId: verify_kyc_api_v1_distributors__distributor_id__kyc_post
+      parameters:
+      - in: path
+        name: distributor_id
+        required: true
+        schema:
+          format: uuid
+          title: Distributor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycVerifyIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Verify Kyc
+      tags:
+      - distributors
   /api/v1/health/db:
     get:
       description: 'Sprint 1.1 helper: report current Alembic revision + table counts.'
@@ -906,6 +2329,230 @@ paths:
       summary: Revoke Invitation
       tags:
       - invitations
+  /api/v1/me/addresses:
+    get:
+      operationId: list_my_addresses_api_v1_me_addresses_get
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AddressOut'
+                title: Response List My Addresses Api V1 Me Addresses Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List My Addresses
+      tags:
+      - me
+    post:
+      operationId: create_my_address_api_v1_me_addresses_post
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressIn'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create My Address
+      tags:
+      - me
+  /api/v1/me/addresses/{address_id}:
+    delete:
+      operationId: delete_my_address_api_v1_me_addresses__address_id__delete
+      parameters:
+      - in: path
+        name: address_id
+        required: true
+        schema:
+          format: uuid
+          title: Address Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete My Address
+      tags:
+      - me
+    patch:
+      operationId: update_my_address_api_v1_me_addresses__address_id__patch
+      parameters:
+      - in: path
+        name: address_id
+        required: true
+        schema:
+          format: uuid
+          title: Address Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Update My Address
+      tags:
+      - me
+  /api/v1/me/profile:
+    get:
+      operationId: get_my_profile_api_v1_me_profile_get
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfileOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get My Profile
+      tags:
+      - me
+    patch:
+      operationId: update_my_profile_api_v1_me_profile_patch
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerProfileIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfileOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Update My Profile
+      tags:
+      - me
+  /api/v1/me/wallet:
+    get:
+      operationId: get_my_wallet_api_v1_me_wallet_get
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get My Wallet
+      tags:
+      - me
   /api/v1/permissions:
     get:
       operationId: list_permissions_api_v1_permissions_get
@@ -1329,6 +2976,206 @@ paths:
       summary: Revoke Role
       tags:
       - users
+  /api/v1/vendors:
+    get:
+      operationId: list_vendors_api_v1_vendors_get
+      parameters:
+      - in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          title: Page
+          type: integer
+      - in: query
+        name: page_size
+        required: false
+        schema:
+          default: 25
+          maximum: 200
+          minimum: 1
+          title: Page Size
+          type: integer
+      - in: query
+        name: q
+        required: false
+        schema:
+          anyOf:
+          - maxLength: 64
+            type: string
+          - type: 'null'
+          title: Q
+      - in: query
+        name: is_active
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_VendorOut_'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Vendors
+      tags:
+      - vendors
+    post:
+      operationId: create_vendor_api_v1_vendors_post
+      parameters:
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorIn'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Vendor
+      tags:
+      - vendors
+  /api/v1/vendors/{vendor_id}:
+    delete:
+      operationId: delete_vendor_api_v1_vendors__vendor_id__delete
+      parameters:
+      - in: path
+        name: vendor_id
+        required: true
+        schema:
+          format: uuid
+          title: Vendor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Vendor
+      tags:
+      - vendors
+    get:
+      operationId: get_vendor_api_v1_vendors__vendor_id__get
+      parameters:
+      - in: path
+        name: vendor_id
+        required: true
+        schema:
+          format: uuid
+          title: Vendor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Vendor
+      tags:
+      - vendors
+    patch:
+      operationId: update_vendor_api_v1_vendors__vendor_id__patch
+      parameters:
+      - in: path
+        name: vendor_id
+        required: true
+        schema:
+          format: uuid
+          title: Vendor Id
+          type: string
+      - in: header
+        name: authorization
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Update Vendor
+      tags:
+      - vendors
   /health:
     get:
       operationId: health_health_get

@@ -117,7 +117,75 @@ catalog, inventory) survives.
 
 ---
 
-## Template for future checkpoints (copy this block for `sprint-1.4-stable`, …)
+## `sprint-1.4-stable` — 2026-02-06
+
+| Field | Value |
+|---|---|
+| **Git commit hash** | (populated on merge — capture from `git rev-parse HEAD`) |
+| **Branch** | `sprint/1.4-purchase-distributor-customer` (merged into `main`) |
+| **Git tag** | `sprint-1.4-stable` |
+| **Migration head** | `007` — Distributor + Customer |
+| **Migrations included** | `001 → 007` (adds `006_purchase.py`, `007_distributor_customer.py`) |
+| **Database schema version** | **50 tables** (+16), 155 foreign keys (+54), 812 CHECK constraints (+94), 154 indexes (+37) |
+| **API version** | v1 |
+| **OpenAPI operations** | **29** (+6) — `docs/api/openapi.{json,yaml}` |
+| **Postman collection** | **46 requests** in 11 folders — `docs/api/postman_collection.json` |
+| **Test summary** | **164 / 164 passed** in ~12 s (17 new: purchase 5, distributor 6, customer 6) |
+| **Coverage summary** | Not measured yet — `pytest-cov` in Sprint 1.5 backlog |
+
+### Dependency versions (unchanged from `sprint-1.3-stable`)
+See the `sprint-1.3-stable` block for the pinned list.
+
+### Docker image versions (unchanged)
+
+### Verification gates (all green at tag)
+
+| Gate | Result |
+|---|---|
+| ruff `E, F, W, I, B` | 0 issues |
+| MyPy-strict on `app/` | 0 issues in 50 files |
+| Bandit on `app/` | 0 findings across 3 638 LOC |
+| pip-audit | 0 CVEs |
+| pytest | 164 passed |
+| Alembic reversible cycle | ends at `007` |
+| Alembic check | 0 drift |
+| Seed idempotency | identical counts across two runs |
+| OpenAPI + Postman drift | baseline matches |
+| Health `/api/v1/health/*` | 200 · `alembic_revision=007, tables=50` |
+
+### Known issues at tag
+
+- **TD-01** — 22 (Sprint-1.3-era) + 19 (Sprint-1.4-era) FK columns lack B-tree indexes. Deferred to Sprint 1.6.
+- **TD-02** — Legacy React storefront still frozen; scheduled for Sprint 2 rebuild.
+- **TD-03/04/05** — rate limiting, RLS, and JWT secret rotation (deferred as documented in the Sprint 1.3 manifest).
+- **TD-09 (new)** — PO / GRN / vendor-invoice transactional lifecycle is schema-only in Sprint 1.4. Workflow endpoints land in Sprint 1.5.
+
+### Rollback procedure
+
+```bash
+# 1. Cut a hotfix branch from the tag.
+git checkout -b hotfix/rollback-to-1.4-stable sprint-1.4-stable
+
+# 2. Force-migrate the DB back to Sprint 1.4 head. WARNING: drops
+#    every Sprint 1.5+ table. Take a backup first.
+pg_dump -h $DB_HOST -U kaya kaya_bos > /tmp/pre-rollback.sql
+alembic downgrade 007   # Sprint 1.4 head
+
+# 3. Redeploy the containers pinned to this tag.
+docker compose down
+git checkout sprint-1.4-stable
+docker compose up --build -d
+
+# 4. Verify health.
+curl $APP_URL/api/v1/health/db
+# Expect: {"alembic_revision":"007","table_count":50,...}
+```
+
+Data loss expectation: any rows written to Sprint-1.5-introduced tables are dropped by the downgrade. Everything captured by the Sprint 1.4 schema (identity, master data, catalog, inventory, purchase master, distributor, customer) survives.
+
+---
+
+## Template for future checkpoints (copy this block for `sprint-1.5-stable`, …)
 
 ```markdown
 ## `sprint-X.Y-stable` — YYYY-MM-DD

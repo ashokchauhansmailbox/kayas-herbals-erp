@@ -37,9 +37,41 @@ def _run_alembic(url: str, *args: str) -> None:
 
 @pytest.fixture(scope="module")
 def db_url(sync_db_url: str) -> str:
+    """Rebuild the schema for this module so catalog / inventory rows don't
+    inherit residue from earlier modules. Re-seeds after upgrading so any test
+    module that runs *after* this one on the same xdist worker still sees the
+    89 permissions / 9 roles / master data expected by RBAC-guarded routes."""
+    import os
+
     _run_alembic(sync_db_url, "downgrade", "base")
     _run_alembic(sync_db_url, "upgrade", "head")
+    async_url = sync_db_url.replace(
+        "postgresql+psycopg2://", "postgresql+asyncpg://", 1
+    )
+    result = subprocess.run(
+        ["python", "-m", "app.seeds.run"],
+        cwd=BACKEND_DIR,
+        env={**os.environ, "DATABASE_URL": async_url},
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:  # pragma: no cover
+        raise RuntimeError(
+            f"Re-seed failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
     yield sync_db_url
+    # Re-seed again on the way out — this module's tests wipe master-data
+    # tables between tests, so downstream modules on the same worker would
+    # otherwise find empty seed tables.
+    _run_alembic(sync_db_url, "upgrade", "head")
+    subprocess.run(
+        ["python", "-m", "app.seeds.run"],
+        cwd=BACKEND_DIR,
+        env={**os.environ, "DATABASE_URL": async_url},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
 
 
 @pytest.fixture()
@@ -86,16 +118,25 @@ def session(db_url: str):
 # Helpers
 # ---------------------------------------------------------------------------
 def _seed_masters(session: Session) -> dict[str, uuid.UUID]:
-    """Insert the minimum master-data rows required for catalog + inventory."""
+    """Insert the minimum master-data rows required for catalog + inventory.
+
+    Uses fetch-or-create so this helper is safe to call whether the DB was
+    started empty (module-scoped teardown wipes rows) or already carries the
+    canonical seed (idempotent seeds run at fixture setup, Sprint 1.4).
+    """
     unit_id = session.execute(
         text("INSERT INTO units (code, name) VALUES (:c, :n) RETURNING id"),
         {"c": f"u-{uuid.uuid4().hex[:6]}", "n": "gram"},
     ).scalar_one()
+    # gst_rates has a UNIQUE on `rate`; pick a value the seed doesn't use
+    # (seed installs 0, 5, 12, 18, 28) — and further randomise to survive
+    # concurrent test modules within the same worker.
+    rate = Decimal(f"{7 + (uuid.uuid4().int % 50) / 100:.2f}")  # 7.00 – 7.49
     gst_id = session.execute(
         text(
             "INSERT INTO gst_rates (rate, effective_from) VALUES (:r, current_date) RETURNING id"
         ),
-        {"r": Decimal("5.00")},
+        {"r": rate},
     ).scalar_one()
     hsn_id = session.execute(
         text(
@@ -264,23 +305,22 @@ def test_price_history_journal_append_only_shape(session: Session):
     assert [str(r) for r in rows] == ["449.00", "479.00", "499.00"]
 
 
-def test_purchase_price_history_records_without_vendor_fk(session: Session):
+def test_purchase_price_history_accepts_null_vendor_and_po(session: Session):
+    """Journal accepts records without a vendor/PO linkage — both FKs are
+    nullable so imports from external systems can land before the local
+    vendors/purchase_orders tables have matching rows.
+    """
     m = _seed_masters(session)
     p = _seed_product(session, m)
-    # vendor_id / po_id are optional and unconstrained (Sprint 1.3 adds FKs).
-    fake_vendor = uuid.uuid4()
-    fake_po = uuid.uuid4()
     session.execute(
         text(
             """
-            INSERT INTO purchase_price_history (variant_id, vendor_id, po_id, price, quantity)
-            VALUES (:v, :vendor, :po, :price, :qty)
+            INSERT INTO purchase_price_history (variant_id, price, quantity)
+            VALUES (:v, :price, :qty)
             """
         ),
         {
             "v": p["variant"],
-            "vendor": fake_vendor,
-            "po": fake_po,
             "price": Decimal("250.00"),
             "qty": Decimal("200"),
         },
@@ -292,8 +332,8 @@ def test_purchase_price_history_records_without_vendor_fk(session: Session):
         ),
         {"v": p["variant"]},
     ).one()
-    assert row.vendor_id == fake_vendor
-    assert row.po_id == fake_po
+    assert row.vendor_id is None
+    assert row.po_id is None
     assert str(row.price) == "250.00"
 
 

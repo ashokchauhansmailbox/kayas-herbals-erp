@@ -37,8 +37,8 @@ Kaya BOS is the single system of record that runs everything Kaya's Herbals does
 |---|---|---|
 | Identity + RBAC + Audit | 1.3 | ✅ Stable |
 | Catalog + Inventory | 1.2 | ✅ Stable |
-| Purchase + Distributor + Customer | 1.4 | ⏳ Next |
-| Orders + Billing + Payments | 1.5 | Planned |
+| Purchase + Distributor + Customer | 1.4 | ✅ Stable (2026-02-06) |
+| Orders + Billing + Payments | 1.5 | ⏳ Next |
 | Marketing + Support + Settings + Perf indexes | 1.6 | Planned |
 | Ops runbooks + DR + release readiness | 1.7 | Planned |
 | React 19 rebuild (storefront + admin) | 2.x | Planned |

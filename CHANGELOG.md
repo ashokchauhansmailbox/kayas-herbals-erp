@@ -5,6 +5,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## Sprint 1.4 — Purchase + Distributor + Customer — 2026-02-06
+
+### Added
+- **Migration 006 (purchase)** — `vendors`, `purchase_orders`, `po_items`, `grn`, `grn_items`, `vendor_invoices`. Backfills the two deferred foreign keys on `purchase_price_history` (`vendor_id → vendors(id)`, `po_id → purchase_orders(id)`) that Sprint 1.2 left unlinked. See `docs/database/006-purchase.md`.
+- **Migration 007 (distributor + customer)** — `distributor_tiers`, `distributors`, `price_lists`, `price_list_items`, `kyc_documents`, `customer_profiles`, `addresses`, `wallets`, `wallet_transactions`, `referrals`. Partial unique index enforces "one default address per (user, label)". See `docs/database/007-distributor-customer.md`.
+- **Models** — `app/models/purchase.py`, `app/models/distributor.py`, `app/models/customer.py` (16 mapped classes). All compose `TimestampMixin`, `ActorMixin`, `SoftDeleteMixin` (+ `VersionMixin` where write concurrency matters).
+- **Pydantic v2 schemas** — `app/schemas/purchase.py` (Vendor{In,Patch,Out}), `app/schemas/distributor.py` (Tier + Distributor + KycVerify), `app/schemas/customer.py` (CustomerProfile + Address + Wallet).
+- **Routes** — 6 new HTTP resource groups: `/api/v1/vendors` (GET list/detail, POST, PATCH, DELETE — RBAC-guarded), `/api/v1/distributor-tiers` (list/detail/POST/PATCH/DELETE), `/api/v1/distributors` (+ `/{id}/kyc` verify), `/api/v1/me/profile` (GET/PATCH), `/api/v1/me/addresses` (list/POST/PATCH/DELETE with default-address invariant), `/api/v1/me/wallet` (GET, auto-provision). All mutating routes wrap `AuditContext`.
+- **Tests** — 17 new tests (`test_purchase.py` 5, `test_distributor.py` 6, `test_customer.py` 6). Total suite: **164 passed** in ~12 s.
+- **Docs** — `docs/sprints/S1.4.md`, `docs/sprints/S1.4_QUALITY_GATE.md`, `docs/database/006-purchase.md`, `docs/database/007-distributor-customer.md`, `docs/RELEASE_MANIFEST.md` extended.
+
+### Fixed
+- **`test_migrations_cycle::clean_test_db` didn't re-seed on teardown** — surfaced when Sprint 1.4's extra test files exposed the missing re-seed on the same xdist worker. Teardown now re-runs `python -m app.seeds.run` after `alembic upgrade head`.
+- **`validation_handler` crashed on Pydantic `field_validator` errors** — raw `ValueError` in `ctx` was not JSON-serialisable. Now runs the error list through `fastapi.encoders.jsonable_encoder`. Regression covered by `test_vendor_rejects_invalid_code`.
+
+### Refactored (no behaviour change)
+- `PurchasePriceHistory` model now declares FKs on `vendor_id` and `po_id` (was declared without FKs — see Sprint 1.2 note "Sprint 1.3 will add the FKs"). Matches the DB constraints created in migration 006.
+- Address model declares the partial unique index `uq_addresses_default_per_user_label` (was previously implicit via raw `op.execute`) so `alembic check` sees the same object migration 007 built.
+
+### Verified (all green at tag)
+- ruff `E, F, W, I, B`, MyPy-strict, Bandit, pip-audit: all clean.
+- Alembic `upgrade head → downgrade base → upgrade head` reversible on a scratch DB, ends at `007`.
+- Seed idempotent.
+- OpenAPI + Postman baseline drift-free.
+- 164 pytest passing.
+
 ## Sprint 1.3 Stable (checkpoint tag `sprint-1.3-stable`) — 2026-02-06
 
 ### Removed

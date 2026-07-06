@@ -1,0 +1,28 @@
+{
+  "summary": "Sprint 1.4 close-out final gate — ALL GREEN. Health returns 200 with alembic_revision=007 and table_count=50. Full pytest suite: 164 passed / 0 failed in 11.47s under xdist. Alembic cycle head->base->head on kaya_bos_gate ends at 007 (head). Seeds idempotent: run twice on kaya_bos with identical canonical counts (permissions=89, roles=9, units=8, gst_rates=5, hsn_codes=12, categories=6, brands=1, warehouses=1, payment_terms=5, tax_rules=4, courier_partners=5). Static gates: ruff clean on backend/app+tests+migrations+/app/scripts; mypy (project mypy.ini) 'Success: no issues found in 50 source files'; bandit 0 findings; pip-audit 'No known vulnerabilities found'. OpenAPI drift check exits 0. Live HTTP smoke on :8001 covering vendors (POST/GET/GET-by-id/PATCH/DELETE incl. 409 duplicate + 422 validation_error on whitespace code + 403 for customer role), distributor-tiers (create/list-ordered/patch/422 discount>100), distributors + KYC verify (kyc_status pending→verified, 400 for reject-without-reason), and full /me/{profile,wallet,addresses} (401 without auth, auto-provision profile & wallet with balance=0, address CRUD with at-most-one-default-per-label invariant enforced and per-user isolation) — 26/26 end-to-end checks passed.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/backend/tests/",
+    "/tmp/e2e_sprint14.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Path parameter inconsistency: /api/v1/vendors/{id} keys by UUID, but /api/v1/distributor-tiers/{code} keys by natural code (PATCH & DELETE). Distributors also use {id}. Consider unifying — either all-by-id or all-by-code — to reduce client surprise. Documented behaviour, not a bug, but worth normalising in Sprint 1.5.",
+    "Distributor `business_name` is a required field distinct from `legal_name`; both max 255. Docs and Postman examples should show both to prevent 422 on integration.",
+    "Auto-provisioning on GET /me/profile and GET /me/wallet is user-friendly but implicit — worth documenting in OpenAPI descriptions so clients don't assume 404 semantics.",
+    "Address label enum is fixed to ('billing','shipping','other') by regex pattern; if product roadmap includes 'home'/'work' labels, upgrade to Literal enum + migration now rather than later to avoid a breaking change.",
+    "mypy config (backend/mypy.ini) intentionally ignores tests/, migrations/, app.models.*, app.db.* untyped-def restrictions — this is documented as Sprint 1.1 baseline; consider tightening tier-by-tier per S1.5 debt item TD-0X. Running `mypy --strict app` still surfaces 92 residuals (mostly missing return-type annotations on FastAPI route handlers) — not a gate failure but the sprint claim of 'mypy-strict clean' should be phrased as 'mypy clean under project config' to avoid ambiguity.",
+    "validation_handler fix confirmed: whitespace vendor code returns 422 with error.code='validation_error' and JSON-serialisable details (jsonable_encoder path exercised) — no crash.",
+    "RBAC guard on /vendors returns rbac.forbidden (403) with the specific missing permission (`purchase.read`) surfaced in details — good observability."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100% (164/164 pytest + 26/26 live e2e)", "frontend": "n/a (skipped per request; legacy code frozen per docs/DEPRECATED.md)" },
+  "test_credentials": "JWTs minted via app.core.security.mint_token(sub=uuid.uuid4(), email='qa+*@example.com', jti=uuid.uuid4().hex). super_admin role attached via INSERT INTO user_roles(...) SELECT id FROM roles WHERE code='super_admin'. Postgres kaya/kaya_dev@localhost:5432; dbs kaya_bos + kaya_bos_test + kaya_bos_gate.",
+  "seed_data_creation": "TEST-prefixed rows created via live e2e in kaya_bos: vendors (created+soft-deleted), distributor_tiers (1 tier code TESTT*), distributors (2 rows, 1 verified + 1 pending), customer_profiles + wallets + addresses (3 QA users). All prefixed 'TEST' / 'qa+*@example.com' for identification.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sprint 1.4 gate PASSED. Alembic head is now 007; 50 tables including vendors, purchase_orders, po_items, grn, grn_items, vendor_invoices, distributor_tiers, distributors, kyc_documents, certifications, referrals, customer_profiles, addresses, wallets, wallet_transactions. Postman collection has 46 requests vs 29 OpenAPI operations — drift check confirms both are in sync with their respective baselines. E2E smoke script at /tmp/e2e_sprint14.py can be reused/adapted for Sprint 1.5 PO/GRN/vendor-invoice flows. Note the routing quirk: distributor-tiers uses {code} not {id}. mypy runs via project mypy.ini (not --strict).",
+  "rca of the issue": "N/A — no regressions detected. Sprint 1.4 unblocks Sprint 1.5."
+}

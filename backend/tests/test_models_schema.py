@@ -58,8 +58,38 @@ INVENTORY_TABLES = {
     "stock_alerts",
 }
 
+# Sprint 1.4 tables.
+PURCHASE_TABLES = {
+    "vendors",
+    "purchase_orders",
+    "po_items",
+    "grn",
+    "grn_items",
+    "vendor_invoices",
+}
+DISTRIBUTOR_TABLES = {
+    "distributor_tiers",
+    "distributors",
+    "price_lists",
+    "price_list_items",
+    "kyc_documents",
+}
+CUSTOMER_TABLES = {
+    "customer_profiles",
+    "addresses",
+    "wallets",
+    "wallet_transactions",
+    "referrals",
+}
+
 EXPECTED_TABLES = (
-    IDENTITY_TABLES | MASTER_DATA_TABLES | CATALOG_TABLES | INVENTORY_TABLES
+    IDENTITY_TABLES
+    | MASTER_DATA_TABLES
+    | CATALOG_TABLES
+    | INVENTORY_TABLES
+    | PURCHASE_TABLES
+    | DISTRIBUTOR_TABLES
+    | CUSTOMER_TABLES
 )
 
 # Tables that must carry timestamp columns.
@@ -71,6 +101,7 @@ TIMESTAMPED = EXPECTED_TABLES - {
     "product_price_history",
     "purchase_price_history",
     "stock_ledger",
+    "wallet_transactions",
 }
 
 # Tables that must have soft-delete columns.
@@ -94,6 +125,19 @@ SOFT_DELETED = {
     "batches",
     "stock_adjustments",
     "stock_transfers",
+    # Sprint 1.4
+    "vendors",
+    "purchase_orders",
+    "grn",
+    "vendor_invoices",
+    "distributor_tiers",
+    "distributors",
+    "price_lists",
+    "kyc_documents",
+    "customer_profiles",
+    "addresses",
+    "wallets",
+    "referrals",
 }
 
 
@@ -261,11 +305,16 @@ def test_price_history_journals_have_no_soft_delete():
         assert "updated_at" not in tbl.c, f"{name} must not carry updated_at"
 
 
-def test_purchase_price_history_vendor_and_po_columns_present_without_fk():
-    """Sprint 1.3 will add the FKs when vendors + purchase_orders exist."""
+def test_purchase_price_history_vendor_and_po_fks_present():
+    """Sprint 1.4 wired the deferred FKs from `purchase_price_history` to
+    `vendors` and `purchase_orders`. Both remain nullable so imported rows
+    without a matching vendor/PO still land in the journal."""
     tbl = Base.metadata.tables["purchase_price_history"]
     assert "vendor_id" in tbl.c
     assert "po_id" in tbl.c
     fk_targets = {fk.column.table.name for fk in tbl.foreign_keys}
-    assert "vendors" not in fk_targets
-    assert "purchase_orders" not in fk_targets
+    assert "vendors" in fk_targets
+    assert "purchase_orders" in fk_targets
+    # Both columns must still allow NULL.
+    assert tbl.c["vendor_id"].nullable
+    assert tbl.c["po_id"].nullable

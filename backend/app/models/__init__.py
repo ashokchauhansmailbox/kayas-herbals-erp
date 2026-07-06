@@ -4,7 +4,15 @@ Any new model file MUST be imported here or Alembic will not detect it.
 """
 
 from app.db.base import Base  # noqa: F401
-from app.models import catalog, identity, inventory, master_data  # noqa: F401
+from app.models import (  # noqa: F401
+    catalog,
+    customer,
+    distributor,
+    identity,
+    inventory,
+    master_data,
+    purchase,
+)
 from app.models.catalog import (  # noqa: F401
     Certification,
     Product,
@@ -13,6 +21,20 @@ from app.models.catalog import (  # noqa: F401
     ProductPriceHistory,
     ProductVariant,
     PurchasePriceHistory,
+)
+from app.models.customer import (  # noqa: F401
+    Address,
+    CustomerProfile,
+    Referral,
+    Wallet,
+    WalletTransaction,
+)
+from app.models.distributor import (  # noqa: F401
+    Distributor,
+    DistributorTier,
+    KycDocument,
+    PriceList,
+    PriceListItem,
 )
 from app.models.identity import (  # noqa: F401
     ActivityLog,
@@ -45,6 +67,14 @@ from app.models.master_data import (  # noqa: F401
     Transporter,
     Unit,
     Warehouse,
+)
+from app.models.purchase import (  # noqa: F401
+    GRN,
+    GRNItem,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    Vendor,
+    VendorInvoice,
 )
 
 __all__ = [
@@ -86,4 +116,23 @@ __all__ = [
     "StockLedger",
     "StockSnapshot",
     "StockAlert",
+    # purchase
+    "Vendor",
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "GRN",
+    "GRNItem",
+    "VendorInvoice",
+    # distributor
+    "DistributorTier",
+    "Distributor",
+    "PriceList",
+    "PriceListItem",
+    "KycDocument",
+    # customer
+    "CustomerProfile",
+    "Address",
+    "Wallet",
+    "WalletTransaction",
+    "Referral",
 ]

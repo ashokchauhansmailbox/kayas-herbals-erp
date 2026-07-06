@@ -85,6 +85,15 @@ Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`.
 ### P2
 - Sprint 1.7 — Ops runbooks (Backup, DR, Migration, Rollback, Restore, Version-Upgrade) + final OpenAPI + Postman snapshot + release readiness review.
 
+### Sprint 1.4 (2026-02-06) — Purchase + Distributor + Customer ✅ Complete (Quality Gate 9.0/10)
+
+- **Migration 006 (purchase)** — vendors, purchase_orders, po_items, grn, grn_items, vendor_invoices; backfilled `purchase_price_history.vendor_id`/`po_id` FKs.
+- **Migration 007 (distributor + customer)** — distributor_tiers, distributors, price_lists, price_list_items, kyc_documents, customer_profiles, addresses, wallets, wallet_transactions, referrals.
+- **Models** — 16 new mapped classes across `purchase.py` / `distributor.py` / `customer.py`.
+- **Routes** — 6 new resource groups (`/vendors`, `/distributor-tiers`, `/distributors` + `/{id}/kyc`, `/me/profile`, `/me/addresses`, `/me/wallet`). All mutating routes RBAC-guarded and audit-wrapped.
+- **Tests** — 17 new (5 purchase + 6 distributor + 6 customer) — grand total **164 pytest cases**, ~12 s.
+- **Fixes shipped alongside:** `test_migrations_cycle::clean_test_db` teardown now re-seeds; validation handler now sanitises Pydantic `field_validator` errors via `jsonable_encoder`.
+
 ### Sprint 1.3 (2026-02-06) — Auth + RBAC + Audit + Seeds + Route Foundations ✅ Complete (Quality Gate passed)
 
 - **Security core** (`app/core/security.py`): HS256 JWT verify against SUPABASE_JWT_SECRET, `mint_token()` for tests.
