@@ -120,7 +120,7 @@ Known gap deferred to Sprint 1.6 (per PRD): **22 FKs lack supporting indexes** �
 ## Environment
 - Local Postgres 15 running on `localhost:5432` (databases: `kaya_bos`, `kaya_bos_test`, user `kaya` / `kaya_dev`).
 - Env file: `backend/.env` (contains `DATABASE_URL`, `DATABASE_URL_SYNC`, and `_TEST` variants).
-- The legacy MongoDB MVP (`backend/server.py`) is still on disk but no longer wired to the FastAPI app — kept until Sprint 2 UI parity.
+- `backend/server.py` (legacy Mongo MVP) was **deleted** in the Sprint 1.3-stable checkpoint. FastAPI (`app.main:app`) is now the only backend entry point. Legacy React storefront under `frontend/src/**` is still on disk but frozen — see `docs/DEPRECATED.md`.
 
 ## Credentials
 See `/app/memory/test_credentials.md`.

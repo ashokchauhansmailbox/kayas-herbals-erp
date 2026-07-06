@@ -1,0 +1,26 @@
+{
+  "summary": "Sprint 1.3 Stable deletion-safety regression. All 10 gates pass: server.py removed with zero live references; supervisor + docker-compose target app.main:app; health endpoints return 200 with alembic_revision=005 and table_count=34; 120/120 pytest pass; ruff clean on backend/app+tests and on full repo (backend/app+tests+migrations+scripts); mypy clean on 41 source files; bandit 0 findings on 3241 LOC; pip-audit 0 vulns; OpenAPI/Postman drift clean; alembic upgrade->downgrade->upgrade cycle on kaya_bos_gate ends at 005; auth mint_token -> /api/v1/auth/me returns 200 and email-collision guard returns 401 auth.email_conflict; docs/DEPRECATED.md + CHANGELOG Sprint 1.3 Stable section present.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/backend/tests/"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Verified deletion invariants: `ls /app/backend/server.py` -> ENOENT; grep for 'server:app', 'from server ', 'import server' across backend/app, scripts, .github, docker-compose.yml returns zero hits.",
+    "Supervisor [program:backend] runs `/root/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8001`. docker-compose.yml backend service also targets app.main:app.",
+    "Health endpoints live under /api/v1/health/{live,ready,db} (not root). /db returns alembic_revision=005 with 34 tables — matches expected schema.",
+    "mypy runs clean using the project's mypy.ini (which activates strict flags per-module and relaxes for models/db/migrations/tests) — 0 issues in 41 source files. Running raw `mypy --strict app` bypasses the per-module overrides and surfaces 71 latent issues in still-thin modules (deps.py, admin.py, main.py, etc.); this is expected per the mypy.ini baseline comment and not a regression.",
+    "Alembic reversibility on kaya_bos_gate: upgrade head (001→005) -> downgrade base (005→base) -> upgrade head (001→005), `alembic current` = '005 (head)'. Clean.",
+    "docs/DEPRECATED.md exists and comprehensively catalogues frozen frontend files with Sprint 2 replacement plan. CHANGELOG.md has 'Sprint 1.3 Stable' section documenting server.py deletion (564 LOC)."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100%", "frontend": "n/a" },
+  "test_credentials": "JWTs minted via app.core.security.mint_token(sub, email). Email domain must be a real TLD (pydantic EmailStr rejects .local); used @example.com.",
+  "seed_data_creation": "Two auto-provisioned users under @example.com created in live DB via /api/v1/auth/me (reftest-*); safe to leave (TEST-prefixed pattern). Alembic cycle on kaya_bos_gate wiped and rebuilt the schema.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sprint 1.3 Stable checkpoint is GREEN. Backend served exclusively by app.main:app under supervisor on :8001. Health paths are /api/v1/health/{live,ready,db} — NOT /live|/ready|/db at root (the request phrasing was ambiguous). Auth flow: mint_token from app.core.security; auto-provision on first /auth/me call; email collision (fresh sub, existing email) returns 401 with error.code=auth.email_conflict. Use @example.com for ad-hoc emails, not @test.local (EmailStr rejects reserved TLDs). Full pytest suite = 120 tests, ~12s under pytest-xdist. Alembic head is '005'.",
+  "rca of the issue": "N/A — cleanup verification, no regressions found."
+}

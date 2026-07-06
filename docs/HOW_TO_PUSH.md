@@ -75,10 +75,10 @@ or introduces model↔migration drift will fail before merge.
 The Quality Gate closed clean (see `docs/sprints/S1.3_QUALITY_GATE.md`,
 overall score **9.0 / 10**). Ship it in one push:
 
-### 4. Save the Quality Gate branch
+### 4. Save the Quality Gate + Stable branch
 - Click **Save to GitHub**.
-- Branch: `sprint/1.3-quality-gate`.
-- Commit message: `Sprint 1.3 Quality Gate — supervisor fix, N+1 batching, auth email-collision guard, ruff pyproject`.
+- Branch: `sprint/1.3-stable`.
+- Commit message: `Sprint 1.3 Stable — Quality Gate + code-review remediation + backend/server.py deletion + DEPRECATED.md`.
 - Base for PR: `main`.
 
 ### 5. PR body (paste)
@@ -118,7 +118,7 @@ overall score **9.0 / 10**). Ship it in one push:
 
 ### 6. Tag the merge
 After the PR merges into `main`, add a lightweight tag via the GitHub UI:
-- Releases → **Draft a new release** → Tag `sprint-1.3-quality-gate` → target `main` → paste the PR body as the release notes.
+- Releases → **Draft a new release** → Tag `sprint-1.3-stable` (**not** `sprint-1.3-quality-gate` — the stable checkpoint supersedes the earlier tag by also deleting `backend/server.py` and adding `docs/DEPRECATED.md`) → target `main` → paste the PR body **plus** the "Sprint 1.3 Stable" section from `CHANGELOG.md` as the release notes.
 
 ### 7. Fresh-clone smoke test (optional but recommended)
 ```bash

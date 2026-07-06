@@ -5,6 +5,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## Sprint 1.3 Stable (checkpoint tag `sprint-1.3-stable`) — 2026-02-06
+
+### Removed
+- 🗑 **Deleted `backend/server.py`** (564 LOC, legacy MongoDB MVP). Zero live references remained: supervisor already ran `app.main:app`, `docker-compose.yml` already targeted `app.main:app`, CI ran the FastAPI pipeline only. `requirements.txt` never listed the MVP-only deps (`motor`, `bcrypt`), so nothing to prune there.
+- FastAPI (`app.main:app`) is now the **only** supported backend entry point.
+
+### Added
+- `docs/DEPRECATED.md` — catalogues the frozen legacy React storefront under `frontend/src/**` (why it's still on disk, which files are legacy, known findings from the 2026-02-06 external code review, and the Sprint-2 rebuild plan that replaces the entire folder). Includes the security-reachability analysis: the legacy frontend's auth flow points at `/api/auth/*` (no `/v1`) which does not exist on FastAPI, so the flagged `localStorage`-JWT XSS risk is **unreachable in the current preview** — no exploit path terminates in a live effect.
+
+### Refactored (Sprint 1.3 code we own — no behaviour change)
+- `app/api/v1/routes/admin.py` — extracted `_assign_role_permissions` helper shared by `create_role` and `update_role`. Cyclomatic complexity of `update_role` down from 11 to ~4.
+- `app/seeds/run.py` — extracted `_role_from_spec`, `_validate_perm_codes`, `_remap_role_perms` helpers. Complexity of `_seed_roles` down from 13 to ~5. Idempotency verified with two consecutive runs producing identical counts.
+- `tests/test_auth.py::test_wrong_signing_secret_rejected` — hardcoded 32-byte secret literal replaced by an env-var-driven constant (`TEST_WRONG_JWT_SECRET`) with a computed fallback.
+
+### Rejected findings (documented for auditability)
+- **"`is None` → `== None`"** — refused. PEP 8 mandates `is`/`is not` for singleton comparisons. Ruff, MyPy-strict, and Bandit accept this pattern. The 15 existing usages in `auth_service.py`, `audit_service.py`, and `seeds/run.py` are all correct.
+- **"3 possibly undefined Python variables"** — traced to pyflakes false positives on `# noqa: F401` module-level re-exports required by Alembic autogenerate and one `# noqa: F821` forward-ref string annotation in `tests/conftest.py`. Ruff and MyPy strict both pass.
+- **"Migrations 002-005 have long `upgrade()` blocks"** — refused. `op.create_table(...)` sequences must stay atomic to keep `upgrade`/`downgrade` reversible. Standard Alembic idiom.
+- **Legacy frontend refactoring (15 useEffect deps, 6 oversized components, array-index keys, localStorage tokens)** — deferred to the Sprint 2 rebuild per `docs/DEPRECATED.md`. No reachable exploit path today.
+
+### Verification (all green)
+- ruff `E, F, W, I, B` — 0 issues.
+- MyPy-strict — 0 issues in 41 files.
+- Bandit — 0 findings.
+- pip-audit — 0 CVEs.
+- pytest — **120 passed** in ~12 s.
+- alembic upgrade → downgrade → upgrade reversible; ends at `005`.
+- alembic check — 0 drift.
+- Seed idempotent (identical counts across two runs post-refactor).
+- OpenAPI + Postman drift — clean.
+
 ## Sprint 1.3 Quality Gate — 2026-02-06
 
 ### Fixed
