@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,23 +8,33 @@ services:
       POSTGRES_PASSWORD: kaya_dev
       POSTGRES_DB: kaya_bos
     ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kaya -d kaya_bos"]
       interval: 5s
       retries: 10
+
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
+
   backend:
     build: ./backend
     env_file: ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://kaya:kaya_dev@postgres:5432/kaya_bos
+      DATABASE_URL_SYNC: postgresql+psycopg2://kaya:kaya_dev@postgres:5432/kaya_bos
+      DATABASE_URL_TEST: postgresql+asyncpg://kaya:kaya_dev@postgres:5432/kaya_bos_test
+      DATABASE_URL_TEST_SYNC: postgresql+psycopg2://kaya:kaya_dev@postgres:5432/kaya_bos_test
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres: {condition: service_healthy}
       redis:    {condition: service_started}
     ports: ["8001:8001"]
-    command: sh -c "alembic upgrade head && python -m app.seeds.run && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
-volumes: {pgdata: {}}
+    # Sprint 1.1/1.2: migrations only. Sprint 1.6 will re-introduce the seed step.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+
+volumes:
+  pgdata: {}

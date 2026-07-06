@@ -103,14 +103,20 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Continue Sprint 1.1 — Kaya BOS (Business Operating System).
+  Continue Sprint 1.1 → 1.2 — Kaya BOS (Business Operating System).
   Repository: https://github.com/ashokchauhansmailbox/kayas-herbals-erp
-  Sprint 1.1 scope = Database Foundation:
-    - SQLAlchemy Base + async session + mixins + type helpers
-    - Identity models (9 tables) and Master-data models (10 tables)
-    - Alembic setup + migrations 001 (extensions/enums), 002 (identity), 003 (master data)
-    - Per-migration docs under /docs/database
-    - Smoke tests: model-contract + migration cycle (upgrade → downgrade → upgrade)
+
+  Sprint 1.1 (Database Foundation) — SQLAlchemy Base + async session + mixins
+  + type helpers + identity/master-data models + Alembic 001–003 + tests.
+
+  Pre-Sprint-1.2 tooling — OpenAPI baseline (JSON+YAML), CI (ruff/mypy/pytest/
+  alembic cycle/openapi drift), .env.example, mypy.ini, docker-compose init
+  script, reproducibility verification against a fresh Postgres.
+
+  Sprint 1.2 (Catalog + Inventory) — catalog.py (products, variants, images,
+  documents, certifications, price journals) + inventory.py (batches, ledger,
+  snapshots, transfers, adjustments, alerts) + v_stock_valuation view +
+  migrations 004, 005 + per-migration docs + unit/integration/smoke tests.
 
 backend:
   - task: "SQLAlchemy foundation (base, session, mixins, types)"
@@ -171,22 +177,70 @@ backend:
     status_history:
         -working: true
         -agent: "main"
-        -comment: "Verified live returns ok; ready returns db up; db endpoint reports alembic_revision=003 and 20 tables. Fixed pre-existing broken import in app/api/v1/__init__.py that referenced non-existent route modules."
+        -comment: "Verified live returns ok; ready returns db up; db endpoint reports alembic_revision=005 (post-Sprint-1.2) and 34 tables. Fixed pre-existing broken import in app/api/v1/__init__.py."
 
-  - task: "Pytest suite (39 cases)"
+  - task: "OpenAPI baseline + drift-check CI"
     implemented: true
     working: true
-    file: "backend/tests/test_models_schema.py, backend/tests/test_migrations_cycle.py"
+    file: "scripts/generate_openapi.py, scripts/check_openapi_drift.py, docs/api/openapi.json, docs/api/openapi.yaml, .github/workflows/ci.yml"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
         -working: true
         -agent: "main"
-        -comment: "39 passed. Model-contract tests need no DB (import metadata); migration-cycle tests exercise upgrade/downgrade/upgrade + enum + extension + drift on kaya_bos_test. pytest.ini configured -n 2 --dist loadscope."
+        -comment: "OpenAPI regenerated deterministically (sorted keys, 2-space indent, trailing newline). CI job openapi-contract re-runs generator and fails if drift detected. Verified locally: drift-check passes."
+
+  - task: "Reproducibility (fresh clone + venv + postgres → migrations + tests + health)"
+    implemented: true
+    working: true
+    file: "docker-compose.yml, infra/postgres-init/01-create-test-db.sql, backend/.env.example"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "Ran a full clean rebuild in /tmp: fresh venv + fresh Postgres DB + fresh pip install + alembic upgrade head → downgrade base → upgrade head + pytest (79 passed) + health endpoints (live/ready/db) all responding. PASS."
+
+  - task: "Sprint 1.2 — Catalog models (product, variant, image, document, certification, price journals)"
+    implemented: true
+    working: true
+    file: "backend/app/models/catalog.py, backend/migrations/versions/004_catalog.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "7 tables. products carries version + soft delete + FSSAI/AYUSH metadata. product_variants uniqueness on sku + barcode. Two append-only journals (product_price_history, purchase_price_history). purchase_price_history.vendor_id/po_id left FK-less (Sprint 1.3 will add)."
+
+  - task: "Sprint 1.2 — Inventory models (batches, ledger, snapshots, transfers, adjustments, alerts) + v_stock_valuation view"
+    implemented: true
+    working: true
+    file: "backend/app/models/inventory.py, backend/migrations/versions/005_inventory.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "7 tables + v_stock_valuation view. CHECK constraints enforce BR-INV-02 (ledger qty != 0), BR-INV-08 (available qty >= 0), from ≠ to on transfers, positive qty on transfer items. Functional unique index on stock_snapshots(variant, warehouse, COALESCE(batch, zero-uuid), state). Integration test verifies view returns qty*cost + days_to_expiry."
+
+  - task: "Pytest suite (79 cases across Sprint 1.1 + 1.2)"
+    implemented: true
+    working: true
+    file: "backend/tests/test_models_schema.py, backend/tests/test_migrations_cycle.py, backend/tests/test_catalog_inventory.py, backend/tests/conftest.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "main"
+        -comment: "79/79 passed under pytest-xdist -n2 loadscope. conftest.py gives each worker its own database (base_db + _gwN suffix) so migration-cycle + catalog-inventory tests no longer collide."
 
 frontend:
-  - task: "Sprint 1.1 has no frontend work"
+  - task: "Sprint 1.1 + 1.2 have no frontend work"
     implemented: false
     working: "NA"
     file: "n/a"
@@ -196,23 +250,24 @@ frontend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Sprint 1.1 is database-only. Frontend rework is scheduled for Sprint 2."
+        -comment: "Database-only sprints. Frontend rework is scheduled for Sprint 2."
 
 metadata:
   created_by: "main_agent"
-  version: "1.1"
-  test_sequence: 1
+  version: "1.2"
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Alembic migrations 001-003"
-    - "Pytest suite (39 cases)"
-    - "Health endpoints (/api/v1/health/live, /ready, /db)"
+    - "Sprint 1.2 — Catalog models"
+    - "Sprint 1.2 — Inventory models + v_stock_valuation view"
+    - "Pytest suite (79 cases)"
+    - "OpenAPI drift check"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     -agent: "main"
-    -message: "Sprint 1.1 (Database Foundation) complete. 39/39 pytest green. Alembic round-trip + drift-check clean. Ready to move to Sprint 1.2 (Catalog + Inventory) on next request."
+    -message: "Sprint 1.2 (Catalog + Inventory) complete. 79/79 pytest green. Alembic round-trip + drift-check clean. Reproducibility verified in a clean venv. Awaiting sprint review + approval before starting Sprint 1.3 (Purchase + Distributor + Customer)."

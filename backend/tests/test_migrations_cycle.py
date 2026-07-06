@@ -45,6 +45,7 @@ def test_upgrade_head_creates_expected_tables(clean_test_db: str):
     engine.dispose()
     assert "alembic_version" in rows
     for expected in (
+        # identity
         "users",
         "roles",
         "permissions",
@@ -54,6 +55,7 @@ def test_upgrade_head_creates_expected_tables(clean_test_db: str):
         "user_invitations",
         "audit_logs",
         "activity_logs",
+        # master data
         "units",
         "gst_rates",
         "hsn_codes",
@@ -64,8 +66,37 @@ def test_upgrade_head_creates_expected_tables(clean_test_db: str):
         "tax_rules",
         "transporters",
         "courier_partners",
+        # catalog
+        "products",
+        "product_variants",
+        "product_images",
+        "product_documents",
+        "certifications",
+        "product_price_history",
+        "purchase_price_history",
+        # inventory
+        "batches",
+        "stock_adjustments",
+        "stock_transfers",
+        "stock_transfer_items",
+        "stock_ledger",
+        "stock_snapshots",
+        "stock_alerts",
     ):
         assert expected in rows, f"missing table: {expected}"
+
+
+def test_stock_valuation_view_exists(clean_test_db: str):
+    _run_alembic(clean_test_db, "upgrade", "head")
+    engine = create_engine(clean_test_db)
+    with engine.connect() as conn:
+        views = conn.execute(
+            text(
+                "SELECT viewname FROM pg_views WHERE schemaname = 'public'"
+            )
+        ).scalars().all()
+    engine.dispose()
+    assert "v_stock_valuation" in views
 
 
 def test_downgrade_base_removes_all_tables(clean_test_db: str):

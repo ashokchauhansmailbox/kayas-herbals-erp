@@ -5,6 +5,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## Sprint 1.2 — Catalog + Inventory — 2026-02-06
+
+### Added
+- **Catalog models** (`app/models/catalog.py`): `Product`, `ProductVariant`, `ProductImage`, `ProductDocument`, `Certification`, `ProductPriceHistory`, `PurchasePriceHistory`.
+- **Inventory models** (`app/models/inventory.py`): `Batch`, `StockAdjustment`, `StockTransfer`, `StockTransferItem`, `StockLedger`, `StockSnapshot`, `StockAlert`.
+- Migration `004` — catalog: 7 tables with product↔category/brand/hsn/unit FKs and append-only journals for selling + purchase price history. `purchase_price_history.vendor_id/po_id` intentionally left FK-less (Sprint 1.3 adds them).
+- Migration `005` — inventory: 7 tables + `v_stock_valuation` view (qty × cost_per_unit + days_to_expiry). CHECK constraints enforce BR-INV-02, BR-INV-08, positive transfer qty, and distinct transfer warehouses. Functional unique index on `stock_snapshots` uses COALESCE so NULL `batch_id` still deduplicates.
+- Per-migration docs (`docs/database/004-catalog.md`, `005-inventory.md`) and Sprint 1.2 summary (`docs/sprints/S1.2.md`).
+- Integration + smoke tests (`tests/test_catalog_inventory.py`) covering catalog CRUD, journal append shape, CHECK-constraint enforcement, valuation view correctness, and stock alert lifecycle.
+- Per-worker test databases in `conftest.py` so pytest-xdist workers no longer collide when running the migration cycle + integration suites in parallel.
+
+### Changed
+- `app/models/__init__.py` — extended re-exports for catalog + inventory models.
+- `tests/test_models_schema.py` — table set expanded, added Sprint 1.2 shape assertions (unique-constraint pairs, CHECK constraint presence, price-journal append-only shape).
+- `tests/test_migrations_cycle.py` — asserts `v_stock_valuation` view exists after upgrade.
+
+## Sprint 1.1.1 — Pre-Sprint-1.2 tooling — 2026-02-06
+
+### Added
+- OpenAPI baseline: `docs/api/openapi.json` + `docs/api/openapi.yaml` (generated deterministically from `app.main.app.openapi()`).
+- `scripts/generate_openapi.py`, `scripts/check_openapi_drift.py`.
+- `.github/workflows/ci.yml` — CI pipeline: ruff → mypy → pytest → alembic up/down/up + alembic check → OpenAPI drift check.
+- `backend/.env.example`, `backend/mypy.ini`.
+- `infra/postgres-init/01-create-test-db.sql` — bootstraps `kaya_bos_test` inside the docker compose Postgres image.
+
+### Changed
+- `docker-compose.yml` — no longer references the not-yet-existing seed script; only runs `alembic upgrade head` before uvicorn.
+
 ## Sprint 1.1 — Database Foundation — 2026-02-06
 
 ### Added

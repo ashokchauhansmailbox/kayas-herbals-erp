@@ -42,6 +42,7 @@ Monorepo skeleton, brand tokens, `.env.example`, DECISIONS.md, architecture docs
 Sprint 1 was then split into sub-sprints 1.1 → 1.7 (see `docs/sprints/S1.md`).
 
 ### Sprint 1.1 (2026-02-06) — Database Foundation ✅
+
 - SQLAlchemy `Base` + naming convention (`app/db/base.py`).
 - Async engine + session factory with `configure_engine()` test hook (`app/db/session.py`).
 - Mixins: `TimestampMixin`, `ActorMixin`, `SoftDeleteMixin`, `VersionMixin` (`app/db/mixins.py`).
@@ -52,18 +53,32 @@ Sprint 1 was then split into sub-sprints 1.1 → 1.7 (see `docs/sprints/S1.md`).
 - Migrations `001` (extensions + 9 enums), `002` (identity core — 9 tables), `003` (master data — 10 tables).
 - Per-migration docs under `/docs/database/`.
 - Health endpoints (`/api/v1/health/live`, `/ready`, `/db`).
-- Smoke tests: 32 model-contract cases + 5 migration-cycle cases, **39/39 green**.
-- Fixed pre-existing broken import in `app/api/v1/__init__.py` (was importing non-existent routes).
 
 Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`. `alembic check` reports zero drift.
+
+### Sprint 1.1.1 (2026-02-06) — CI & OpenAPI baseline
+
+- `.github/workflows/ci.yml` — ruff, mypy, pytest, alembic cycle, OpenAPI drift check as CI gates.
+- OpenAPI baseline committed at `docs/api/openapi.{json,yaml}`; regenerated via `scripts/generate_openapi.py`, verified via `scripts/check_openapi_drift.py`.
+- `backend/.env.example`, `backend/mypy.ini`, `infra/postgres-init/01-create-test-db.sql`.
+- `conftest.py` refactored to give each pytest-xdist worker its own database (avoids collisions between the migration-cycle suite and integration suites).
+
+### Sprint 1.2 (2026-02-06) — Catalog + Inventory ✅ Ready for review
+
+- **Catalog models** (`app/models/catalog.py`): `Product`, `ProductVariant`, `ProductImage`, `ProductDocument`, `Certification`, `ProductPriceHistory`, `PurchasePriceHistory`.
+- **Inventory models** (`app/models/inventory.py`): `Batch`, `StockAdjustment`, `StockTransfer`, `StockTransferItem`, `StockLedger`, `StockSnapshot`, `StockAlert`.
+- Migration `004` (catalog — 7 tables), migration `005` (inventory — 7 tables + `v_stock_valuation` view).
+- CHECK constraints: `qty <> 0` on ledger, `qty > 0` on transfer items, `from ≠ to` on transfers, `available qty ≥ 0` on snapshots.
+- Functional unique index on `stock_snapshots (variant, warehouse, COALESCE(batch, zero-uuid), state)`.
+- Per-migration docs `docs/database/004-catalog.md`, `005-inventory.md`.
+- 79 pytest cases green (schema contract + migration cycle + integration/CRUD/CHECK/view assertions).
 
 ## Backlog
 
 ### P0 — next up
-- **Sprint 1.2 — Catalog + Inventory**: `catalog.py` (products, variants, images, certifications, price histories) + `inventory.py` (batches, stock ledger + snapshots, transfers, alerts). Migrations `004`, `005`.
+- **Sprint 1.3 — Purchase + Distributor + Customer**: `purchase.py` (vendors, purchase_orders, po_items, grn, grn_items, vendor_invoices) + `distributor.py` (tiers, price lists, distributors, kyc_documents, customer_ledger) + `customer.py` (profiles, addresses, wallets, referrals). Migrations `006`, `007` + data migration to install `purchase_price_history.vendor_id/po_id` FKs.
 
 ### P1
-- Sprint 1.3 — Purchase + Distributor + Customer models · migrations `006`, `007`.
 - Sprint 1.4 — Orders + Billing + Payments · migrations `008`, `009`.
 - Sprint 1.5 — Marketing + Support + Settings + indexes/views/triggers · migrations `010`, `011`, `012`.
 - Sprint 1.6 — Supabase JWT verifier + capability RBAC middleware + seeds (permissions/roles/master data) + Pydantic schemas + route stubs.
