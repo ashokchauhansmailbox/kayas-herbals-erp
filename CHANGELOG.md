@@ -9,10 +9,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Removed
 - 🗑 **Deleted `backend/server.py`** (564 LOC, legacy MongoDB MVP). Zero live references remained: supervisor already ran `app.main:app`, `docker-compose.yml` already targeted `app.main:app`, CI ran the FastAPI pipeline only. `requirements.txt` never listed the MVP-only deps (`motor`, `bcrypt`), so nothing to prune there.
+- 🗑 **Dropped `tenacity==9.0.0`** from `backend/requirements.txt` — zero direct imports across `app/`, `tests/`, `migrations/`, and `scripts/`. Confirmed transitive availability via `emergentintegrations → google-genai` if a future sprint needs it, but Sprint 1.3 does not.
 - FastAPI (`app.main:app`) is now the **only** supported backend entry point.
 
 ### Added
 - `docs/DEPRECATED.md` — catalogues the frozen legacy React storefront under `frontend/src/**` (why it's still on disk, which files are legacy, known findings from the 2026-02-06 external code review, and the Sprint-2 rebuild plan that replaces the entire folder). Includes the security-reachability analysis: the legacy frontend's auth flow points at `/api/auth/*` (no `/v1`) which does not exist on FastAPI, so the flagged `localStorage`-JWT XSS risk is **unreachable in the current preview** — no exploit path terminates in a live effect.
+- **`README.md`** — full 13-section onboarding guide replacing the 29-byte stub (project overview, architecture, folder structure, tech stack, local + Docker setup, env vars, migrations, tests, code-quality tools, branch strategy, sprint workflow, deployment).
+- **`docs/TECHNICAL_DEBT.md`** — single source of truth for every deferred item with description, reason, priority, planned sprint, and status. Includes a "Rejected findings" section documenting refusals with citations.
+- **`docs/RELEASE_MANIFEST.md`** — per-checkpoint manifest for `sprint-1.3-stable` capturing commit/branch/tag, migration head, schema version, API + OpenAPI + Postman versions, dep pins, Docker base images, verification gates, known issues, and the exact rollback procedure. Includes a template block for future stable tags.
 
 ### Refactored (Sprint 1.3 code we own — no behaviour change)
 - `app/api/v1/routes/admin.py` — extracted `_assign_role_permissions` helper shared by `create_role` and `update_role`. Cyclomatic complexity of `update_role` down from 11 to ~4.

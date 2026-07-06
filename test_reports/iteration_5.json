@@ -1,0 +1,30 @@
+{
+  "summary": "Pre-Sprint-1.4 final gate verification after container reset and Postgres re-provision. All 10 gates GREEN. pytest 120/120 passed (8.32s); ruff (E,F,W,I,B with pyproject.toml ignores B008/E501) clean on backend/app+tests+migrations+/app/scripts; mypy clean 41 files; bandit 0 findings; pip-audit 0 CVEs; OpenAPI+Postman drift clean; alembic upgrade->downgrade->upgrade on kaya_bos_gate ends at 005; seeds idempotent with canonical counts 89/9/8/5/12/6/1/1/5/4/5 on two consecutive runs; health /api/v1/health/{live,ready,db} all 200 with alembic_revision=005 and 34 tables; auth mint_token->/api/v1/auth/me returns 200, email-collision guard returns 401 auth.email_conflict; backend/server.py absent with zero live references; tenacity removed from backend/requirements.txt and no source imports (transitive only via emergentintegrations); docs (README 13 sections + TOC, TECHNICAL_DEBT TD-01..TD-07 open + TD-08 resolved, RELEASE_MANIFEST sprint-1.3-stable with all required fields) present and coherent.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "test_report_links": [
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/backend/tests/"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "requirements.txt: `grep -n tenacity backend/requirements.txt` -> empty. `grep -rn tenacity backend/app backend/tests backend/migrations /app/scripts` -> empty. `python -c 'import tenacity'` still succeeds transitively (as expected, via emergentintegrations).",
+    "Dead code: `ls backend/server.py` -> ENOENT; grep for 'server:app' / 'from server ' / 'import server ' across backend/app, scripts, .github, docker-compose.yml -> zero hits.",
+    "Alembic on freshly recreated kaya_bos_gate: upgrade head (001->005) -> downgrade base -> upgrade head -> alembic current = '005 (head)'.",
+    "Seeds run twice on kaya_bos_gate produced identical counts (89/9/8/5/12/6/1/1/5/4/5) — idempotency confirmed.",
+    "README.md contains all 13 required sections (Project overview, Architecture, Folder structure, Tech stack, Local dev, Docker, Env vars, Migrations, Tests, Code quality, Branch strategy, Sprint workflow, Deployment) plus a Table of contents.",
+    "docs/TECHNICAL_DEBT.md lists TD-01 through TD-07 as Open (with priority + target sprint) and TD-08 as Resolved 2026-02-06 (server.py deletion).",
+    "docs/RELEASE_MANIFEST.md `sprint-1.3-stable` entry includes: commit placeholder, branch, tag, migration head=005, schema version (34 tables/101 FKs/718 CHECKs/117 indexes), API version v1, OpenAPI (23 ops/18 paths), Postman (23 requests/7 folders), tests (120), dependency versions, Docker image versions, verification gates table (all green), known issues (TD-05), rollback procedure.",
+    "Auth flow: mint_token(sub=uuid, email='qa+gate@example.com') -> /api/v1/auth/me -> 200 with correct email; second token with new sub + same email -> 401 with error.code=auth.email_conflict.",
+    "Health endpoints: /live -> {status:ok}; /ready -> {status:ok, db:up}; /db -> alembic_revision='005', 34 tables listed.",
+    "Backend hosted by supervisor as `uvicorn app.main:app --host 0.0.0.0 --port 8001` — running clean post container-reset (pid confirmed via supervisorctl status)."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100%", "frontend": "n/a (skipped per request; frozen per DEPRECATED.md)" },
+  "test_credentials": "JWTs minted via app.core.security.mint_token(sub=uuid.uuid4(), email='qa+gate@example.com', jti=uuid.uuid4().hex). Postgres: kaya/kaya_dev on localhost:5432, dbs kaya_bos + kaya_bos_test + kaya_bos_gate.",
+  "seed_data_creation": "kaya_bos_gate scratch DB recreated (drop+create), migrated to head=005, seeded twice. One auto-provisioned user 'qa+gate@example.com' in live kaya_bos via /auth/me; TEST-prefix-safe pattern.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Pre-Sprint-1.4 checkpoint is GREEN post container reset. Postgres 15 was re-provisioned by main agent; DATABASE_URL uses postgresql+asyncpg://kaya:kaya_dev@localhost:5432/kaya_bos; kaya_bos_gate available for scratch alembic cycles. All 120 pytest under pytest-xdist ~8s. Ruff pyproject ignores B008 + E501; running `ruff check --select E,F,W,I,B` from CLI without pyproject flags surfaces B008 on FastAPI Depends() — that is expected and covered by config. Note: run ruff against `/app/scripts` (repo root), not `backend/scripts` (does not exist). OpenAPI drift script lives at /app/scripts/check_openapi_drift.py. Sprint 1.4 (Purchase + Distributor + Customer) is unblocked.",
+  "rca of the issue": "N/A — final green verification, no regressions."
+}
