@@ -98,6 +98,21 @@ Round-trip verified: `alembic upgrade head → downgrade base → upgrade head`.
 - **CI extended**: seed idempotency (×2) + Docker Compose smoke boot job.
 - Tests: 30 new (11 auth + 9 RBAC + 10 audit/OWASP) — grand total **109 pytest cases green**.
 
+### Sprint 1.3 Quality Gate (2026-02-06) ✅ CLOSED
+
+Comprehensive verification pass (see `docs/sprints/S1.3_QUALITY_GATE.md`). Overall production-readiness: **9.0 / 10**.
+
+Fixes applied and verified by the testing agent (`/app/test_reports/iteration_{1,2}.json`):
+1. 🔴 **Supervisor was booting the legacy `server.py` (Mongo MVP)** → repointed `[program:backend]` to `app.main:app`; new v1 API is now actually reachable.
+2. 🟠 **N+1 in `POST/PATCH /api/v1/roles`** → batched with `Permission.code.in_()`; role create/update went from 89 → 3 queries.
+3. 🟠 **`GET /auth/me` returned 500 on email collision during auto-provision** → now raises `AuthError("auth.email_conflict")` → 401. Regression test added.
+4. 🟡 OpenAPI/Postman baseline drift (pagination bounds) → regenerated.
+5. 🟡 30 files with non-canonical import order → auto-fixed; `backend/pyproject.toml` now pins ruff `I` + `B` rules.
+
+Verification: ruff + mypy + bandit + pip-audit all clean. Alembic `upgrade → downgrade → upgrade` reversible. Seed idempotent (11 counts match on both runs). Health endpoints 200. OpenAPI drift clean. **120/120 pytest green in ~12 s.**
+
+Known gap deferred to Sprint 1.6 (per PRD): **22 FKs lack supporting indexes** — cardinality is small today; migration `013_indexes.py` will cover them alongside the other performance work already scoped in 1.6.
+
 ### P2
 - Sprint 1.7 — Ops runbooks (Backup, DR, Migration, Rollback, Restore, Version-Upgrade) + OpenAPI snapshot committed to `/docs/api/openapi.json`.
 - Sprint 2+ — Master-data CRUD UI, catalog UI, inventory UI, orders workflow, invoicing, distributor portal, storefront rebuild in React 19.

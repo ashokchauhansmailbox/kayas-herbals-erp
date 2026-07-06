@@ -5,6 +5,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## Sprint 1.3 Quality Gate — 2026-02-06
+
+### Fixed
+- 🔴 **Supervisor was booting `backend/server.py` (legacy Mongo MVP)** — the container reported RUNNING but was crash-looping on `KeyError: 'JWT_SECRET'`, so the new `app.main:app` had never actually served a request through supervisor. Repointed `[program:backend]` in `/etc/supervisor/conf.d/supervisord.conf` to `uvicorn app.main:app`; verified `/api/v1/health/{live,ready,db}` all return 200.
+- 🟠 **N+1 query in `POST/PATCH /api/v1/roles`** — the create/update handlers looped one `SELECT permissions WHERE code = ?` per requested code (up to 89 for `super_admin`). Batched into a single `Permission.code.in_()` fetch + dict lookup. Now O(3) queries flat. `admin.py`.
+- 🟠 **`GET /api/v1/auth/me` returned 500 on email collision during auto-provision** — a JWT with a new `sub` UUID but a pre-existing email raised a raw `IntegrityError` on `uq_users_email`. Now pre-checks by email and raises `AuthError("auth.email_conflict")` → HTTP 401 with the unified error envelope. `auth_service.py`. New regression test.
+- 🟡 **OpenAPI/Postman baseline drift** — pagination bounds (`minimum: 1`, `maximum: 200` on `page`/`page_size`) added earlier were never regenerated. `docs/api/openapi.{json,yaml}` and `postman_collection.json` refreshed.
+- 🟡 **30 files with non-canonical import order** — auto-fixed. `backend/pyproject.toml` added to pin ruff rule set (`E, F, W, I, B`) so the existing CI `ruff check` step now enforces isort ordering going forward.
+
+### Added
+- `docs/sprints/S1.3_QUALITY_GATE.md` — full technical debt, security, and performance report with dimension scores (Overall production-readiness: **9.0 / 10**).
+- `backend/tests/test_auth.py::test_email_collision_on_autoprovision_returns_401` — regression test for the auto-provision fix.
+- `backend/pyproject.toml` — ruff config.
+
+### Verified
+- Ruff / MyPy-strict / Bandit / pip-audit: clean.
+- Alembic `upgrade head → downgrade base → upgrade head` reversible on a scratch database.
+- Seed script idempotent (identical counts across two invocations).
+- OpenAPI + Postman drift: none.
+- Pytest: **120 passed in ~12 s** (119 pre-existing + 1 new regression).
+- Testing agent verified iteration_1 (all 8 gates green) and iteration_2 (email-collision fix green).
+
+### Deferred (planned, not blocking)
+- Migration `013_indexes.py` to add covering B-tree indexes on 22 FKs (`role_permissions.permission_id`, `user_roles.role_id`, `stock_ledger.warehouse_id`, `stock_snapshots.warehouse_id`, batch/variant/hsn/unit FKs on catalog & inventory). Scoped in Sprint 1.6 per PRD.
+- Delete `backend/server.py` (legacy Mongo MVP) during Sprint 2 UI cutover.
+
 ## Sprint 1.3 — Auth + RBAC + Audit + Seeds + Route Foundations — 2026-02-06
 
 ### Added
