@@ -55,6 +55,35 @@ async def _batch_perms_for_roles(
     return out
 
 
+async def _assign_role_permissions(
+    db, role: Role, codes: list[str], *, replace: bool
+) -> None:
+    """Assign `codes` to `role`, batch-fetching permissions in a single query.
+
+    - `replace=True`  : wipe existing role→permission rows first (update path).
+    - `replace=False` : only insert (create path, no pre-existing rows).
+
+    Raises HTTPException(400) with the first unknown permission code.
+    """
+    if replace:
+        await db.execute(
+            delete(RolePermission).where(RolePermission.role_id == role.id)
+        )
+    if not codes:
+        return
+    perms = {
+        p.code: p
+        for p in (
+            await db.execute(select(Permission).where(Permission.code.in_(codes)))
+        ).scalars()
+    }
+    missing = [c for c in codes if c not in perms]
+    if missing:
+        raise HTTPException(400, f"Unknown permission: {missing[0]}")
+    for pcode in codes:
+        db.add(RolePermission(role_id=role.id, permission_id=perms[pcode].id))
+
+
 @roles_router.get(
     "", response_model=list[RoleOut], dependencies=[Depends(require("roles.read"))]
 )
@@ -105,20 +134,7 @@ async def create_role(
     )
     db.add(role)
     await db.flush()
-    if payload.permissions:
-        perms = {
-            p.code: p
-            for p in (
-                await db.execute(
-                    select(Permission).where(Permission.code.in_(payload.permissions))
-                )
-            ).scalars()
-        }
-        missing = [c for c in payload.permissions if c not in perms]
-        if missing:
-            raise HTTPException(400, f"Unknown permission: {missing[0]}")
-        for pcode in payload.permissions:
-            db.add(RolePermission(role_id=role.id, permission_id=perms[pcode].id))
+    await _assign_role_permissions(db, role, payload.permissions, replace=False)
     async with AuditContext(
         db,
         actor_id=principal.id,
@@ -162,29 +178,9 @@ async def update_role(
         if payload.description is not None:
             role.description = payload.description
         if payload.permissions is not None:
-            await db.execute(
-                delete(RolePermission).where(RolePermission.role_id == role.id)
+            await _assign_role_permissions(
+                db, role, payload.permissions, replace=True
             )
-            if payload.permissions:
-                perms = {
-                    p.code: p
-                    for p in (
-                        await db.execute(
-                            select(Permission).where(
-                                Permission.code.in_(payload.permissions)
-                            )
-                        )
-                    ).scalars()
-                }
-                missing = [c for c in payload.permissions if c not in perms]
-                if missing:
-                    raise HTTPException(400, f"Unknown permission: {missing[0]}")
-                for pcode in payload.permissions:
-                    db.add(
-                        RolePermission(
-                            role_id=role.id, permission_id=perms[pcode].id
-                        )
-                    )
         ctx.after = {"name": role.name, "description": role.description}
     return await _serialize_role(db, role)
 

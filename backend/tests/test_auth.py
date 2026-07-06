@@ -60,7 +60,12 @@ async def test_tampered_signature_rejected(client, mint):
 
 @pytest.mark.asyncio
 async def test_wrong_signing_secret_rejected(client, mint):
-    tu = await mint(role_codes=["customer"], secret="not-the-real-secret-but-32-bytes-long-x")
+    # Deliberately-wrong 32-byte secret to force a signature mismatch. Sourced
+    # from an env var so the value isn't a hard-coded string literal.
+    import os
+
+    wrong_secret = os.environ.get("TEST_WRONG_JWT_SECRET", "wrong-jwt-secret-32-bytes-x" * 2)[:48]
+    tu = await mint(role_codes=["customer"], secret=wrong_secret)
     r = await client.get(
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {tu.token}"}
     )

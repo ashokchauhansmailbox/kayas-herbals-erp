@@ -60,50 +60,67 @@ async def _seed_permissions(db: AsyncSession) -> dict[str, Permission]:
     return by_code
 
 
+def _role_from_spec(spec: dict, existing: Role | None) -> tuple[Role, bool]:
+    """Upsert helper — returns (role, is_new). Updates existing in place."""
+    code = str(spec["code"])
+    name = str(spec["name"])
+    description = str(spec.get("description") or "")
+    is_system = bool(spec.get("is_system", False))
+    if existing is None:
+        return Role(
+            code=code, name=name, description=description, is_system=is_system
+        ), True
+    existing.name = name
+    existing.description = description
+    existing.is_system = is_system
+    return existing, False
+
+
+def _validate_perm_codes(role_code: str, perms_list: object) -> list[str]:
+    if not isinstance(perms_list, list):
+        raise TypeError(f"role {role_code!r}: permissions must be a list")
+    for pcode in perms_list:
+        if not isinstance(pcode, str):
+            raise TypeError(
+                f"Non-string permission code in role {role_code!r}: {pcode!r}"
+            )
+    return perms_list
+
+
+async def _remap_role_perms(
+    db: AsyncSession, role: Role, perms_list: list[str], perms: dict[str, Permission]
+) -> None:
+    await db.execute(
+        delete(RolePermission).where(RolePermission.role_id == role.id)
+    )
+    for pcode in perms_list:
+        perm = perms.get(pcode)
+        if perm is None:
+            raise ValueError(
+                f"Unknown permission code in role {role.code!r}: {pcode!r}"
+            )
+        db.add(RolePermission(role_id=role.id, permission_id=perm.id))
+
+
 async def _seed_roles(
     db: AsyncSession, perms: dict[str, Permission]
 ) -> dict[str, Role]:
     by_code: dict[str, Role] = {}
     existing = {r.code: r for r in (await db.execute(select(Role))).scalars()}
     for spec in ROLES:
-        code = str(spec["code"])
-        row = existing.get(code)
-        if row is None:
-            row = Role(
-                code=code,
-                name=str(spec["name"]),
-                description=str(spec.get("description") or ""),
-                is_system=bool(spec.get("is_system", False)),
-            )
+        row, is_new = _role_from_spec(spec, existing.get(str(spec["code"])))
+        if is_new:
             db.add(row)
-        else:
-            row.name = str(spec["name"])
-            row.description = str(spec.get("description") or "")
-            row.is_system = bool(spec.get("is_system", False))
-        by_code[code] = row
+        by_code[str(spec["code"])] = row
     await db.flush()
 
     # Re-map system roles' permissions fully; leave custom roles alone.
     for spec in ROLES:
-        code = str(spec["code"])
-        role = by_code[code]
+        role = by_code[str(spec["code"])]
         if not role.is_system:
             continue
-        await db.execute(
-            delete(RolePermission).where(RolePermission.role_id == role.id)
-        )
-        perms_list = spec.get("permissions") or []
-        if not isinstance(perms_list, list):
-            raise TypeError(f"role {code!r}: permissions must be a list")
-        for pcode in perms_list:
-            if not isinstance(pcode, str):
-                raise TypeError(
-                    f"Non-string permission code in role {code!r}: {pcode!r}"
-                )
-            perm = perms.get(pcode)
-            if perm is None:
-                raise ValueError(f"Unknown permission code in role {code!r}: {pcode!r}")
-            db.add(RolePermission(role_id=role.id, permission_id=perm.id))
+        codes = _validate_perm_codes(role.code, spec.get("permissions") or [])
+        await _remap_role_perms(db, role, codes, perms)
     await db.flush()
     return by_code
 

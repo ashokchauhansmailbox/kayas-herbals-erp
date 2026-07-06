@@ -1,0 +1,24 @@
+{
+  "summary": "Sprint 1.3 code-review remediation regression pass. All 120 backend tests pass, ruff/mypy clean, OpenAPI drift clean, RBAC create/update/delete flows on refactored admin.py behave correctly (valid+invalid perm codes, system role protection), and seed idempotency confirmed with identical counts on two consecutive runs against kaya_bos_gate.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/test_reports/pytest/pytest_results.xml",
+    "/app/backend/tests/test_auth.py",
+    "/tmp/test_refactor.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "admin.py _assign_role_permissions is clean: batch-fetches all Permission rows in one query, raises 400 with the first unknown code, and correctly toggles replace=True/False between create_role/update_role paths.",
+    "seeds/run.py refactor cleanly separates spec parsing (_role_from_spec), validation (_validate_perm_codes), and remapping (_remap_role_perms); idempotency is preserved as demonstrated by identical counts across two runs.",
+    "test_auth.py env-var-driven wrong secret (TEST_WRONG_JWT_SECRET) with a computed 48-byte fallback is a solid fix — no longer leaks a hardcoded literal, and the test still validates the 401 rejection path."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a"},
+  "test_credentials": "JWTs minted via app.core.security.mint_token; super_admin granted via direct INSERT into user_roles.",
+  "seed_data_creation": "None persisted — test role and test user were created & cleaned up in /tmp/test_refactor.py.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sprint 1.3 refactor regression is GREEN. 120/120 pytest, ruff/mypy/OpenAPI drift all clean. RBAC create/update/delete on custom roles verified against live backend at :8001. System role edit/delete protections return 400 with expected messages ('Cannot edit system role' / 'Cannot delete system role'). Seed run twice against kaya_bos_gate yielded identical counts (permissions:89, roles:9, units:8, gst_rates:5, hsn_codes:12, categories:6, brands:1, warehouses:1, payment_terms:5, tax_rules:4, courier_partners:5). Note: API accepts 'permissions' key (not 'permission_codes' as request phrasing suggested) and rejects .local email domains via pydantic EmailStr — use @example.com for future ad-hoc tests.",
+  "rca of the issue": "N/A — pure refactor, no issues found."
+}
